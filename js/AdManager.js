@@ -28,7 +28,7 @@ const AdManager = (function () {
       monetag: {
         name: 'Monetag',
         enabled: true,
-        directLinkUrl: '', // e.g., 'https://monetag.com/your-link-id'
+        directLinkUrl: 'https://www.effectivecpmnetwork.com/kvnw38jp?key=d0cba4ffa97061f6ee503168678dac31', // e.g., 'https://monetag.com/your-link-id'
         priority: 1
       },
       adsterra: {
@@ -130,7 +130,7 @@ const AdManager = (function () {
   // SHOULD SHOW AD LOGIC
   // ----------------------------------------------------------------
   function shouldShowAd() {
-    return false;
+    return true;
   }
 
   // ----------------------------------------------------------------
