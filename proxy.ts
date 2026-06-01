@@ -31,12 +31,12 @@ const HTML_REDIRECTS = {
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://*.adsterra.com https://*.effectivecpmnetwork.com https://www.googletagmanager.com https://www.google-analytics.com https://pl29606008.effectivecpmnetwork.com https://pl29606009.effectivecpmnetwork.com",
+  "script-src 'self' 'unsafe-inline' https://*.adsterra.com https://*.effectivecpmnetwork.com https://www.highperformanceformat.com https://www.googletagmanager.com https://www.google-analytics.com https://pl29606008.effectivecpmnetwork.com https://pl29606009.effectivecpmnetwork.com https://pl29606011.effectivecpmnetwork.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' https://fonts.gstatic.com",
-  "frame-src https://*.adsterra.com https://*.effectivecpmnetwork.com",
-  "connect-src 'self' https://api.openrouter.ai https://www.google-analytics.com https://*.effectivecpmnetwork.com",
+  "frame-src https://*.adsterra.com https://*.effectivecpmnetwork.com https://www.highperformanceformat.com",
+  "connect-src 'self' https://api.openrouter.ai https://www.google-analytics.com https://*.effectivecpmnetwork.com https://www.highperformanceformat.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'"

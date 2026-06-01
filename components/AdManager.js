@@ -56,15 +56,14 @@ export default function AdManager({ location, toolId }) {
   }, [location]);
 
   useEffect(() => {
-    fetch('/api/admin/ads')
+    fetch('/api/ads')
       .then(r => r.json())
       .then(data => {
         if (data.success) {
-          const ad = data.ads.find(a => a.location === location);
+          const ad = data.ads[location] || null;
           setAdData(ad);
-          if (ad?.enabled && ad?.code) setLoaded(true);
-          else setLoaded(true);
         }
+        setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, [location]);

@@ -4,7 +4,7 @@ import { rateLimitMiddleware } from '@/lib/rate-limit';
 
 const limiter = rateLimitMiddleware({ max: 30 });
 
-const DEFAULT_AD_LOCATIONS = ['header', 'sidebar', 'content_top', 'content_bottom', 'footer', 'popup'];
+const DEFAULT_AD_LOCATIONS = ['header', 'sidebar', 'content_top', 'content_bottom', 'footer', 'popup', 'in_tool', 'loading_state', 'mid_result'];
 
 export async function GET(request) {
   if (!verifyAdmin(request)) {
