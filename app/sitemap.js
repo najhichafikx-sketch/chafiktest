@@ -2,17 +2,22 @@ export default function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktech.com';
   const staticPages = [
     '/', '/about', '/contact', '/faq', '/privacy', '/terms', '/disclaimer',
-    '/pricing', '/login', '/register', '/dashboard', '/ecommerce', '/blog'
+    '/pricing', '/login', '/register', '/dashboard', '/blog'
   ];
   const tools = [
     'seo-article-generator', 'image-to-prompt', 'video-to-prompt', 'tiktok-tools',
-    'youtube-suite', 'ai-humanizer', 'prompt-viral', 'prompt-article',
+    'youtube-suite', 'youtube-creator', 'ai-humanizer', 'prompt-viral', 'prompt-article',
     'ad-copy-generator', 'amazon-listing-generator', 'digital-product-creator',
     'digital-product-email-writer', 'digital-product-name-generator',
     'dropshipping-research', 'etsy-listing-generator', 'landing-page-generator',
     'pricing-optimizer', 'product-description-generator', 'product-idea-finder',
     'product-image-enhancer', 'product-title-generator', 'review-response-generator',
-    'sales-copy-generator', 'shopify-seo-generator'
+    'sales-copy-generator', 'shopify-seo-generator',
+    'viral-video-ideas', 'youtube-title-generator', 'viral-hook-generator',
+    'youtube-script-generator', 'thumbnail-prompt-generator', 'youtube-description-generator',
+    'youtube-tags-generator', 'youtube-seo-optimizer', 'faceless-video-generator',
+    'viral-shorts-generator', 'storytelling-script-generator', 'community-post-generator',
+    'comment-reply-generator', 'video-content-repurposer'
   ];
   const blogArticles = [
     'ai-seo-article-generator', 'image-to-prompt-ai', 'video-to-prompt-ai',
@@ -22,7 +27,12 @@ export default function sitemap() {
     'shopify-ai-seo', 'ai-product-titles', 'ai-review-responses',
     'ai-pricing-optimization', 'ai-product-ideas', 'ai-product-images',
     'ai-digital-products', 'ai-product-names', 'ai-email-marketing',
-    'ai-dropshipping-research', 'ai-writing-prompts', 'viral-content-prompts'
+    'ai-dropshipping-research', 'ai-writing-prompts', 'viral-content-prompts',
+    'youtube-viral-ideas', 'youtube-title-optimization', 'viral-hook-generation',
+    'ai-youtube-script-writing', 'ai-thumbnail-prompts', 'youtube-seo-descriptions',
+    'youtube-tag-strategy', 'youtube-seo-optimization', 'faceless-video-creation',
+    'viral-shorts-strategy', 'storytelling-youtube-scripts', 'youtube-community-engagement',
+    'youtube-comment-management', 'video-content-repurposing'
   ];
 
   const entries = [
