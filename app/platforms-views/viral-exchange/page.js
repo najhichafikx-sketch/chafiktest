@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { VideoEmbed } from '@/lib/video-embed';
 import { CATEGORIES, LANGUAGES, generateCampaignId } from '@/lib/platforms-views-content';
 
 const STORAGE_KEY = 'pv_viral_exchange';
@@ -69,36 +70,8 @@ export default function ViralExchangePage() {
   );
 }
 
-function getVideoEmbed(url) {
-  if (!url) return null;
-  let videoId = '';
-  let platform = '';
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    if (match) { videoId = match[1]; platform = 'youtube'; }
-  } else if (url.includes('tiktok.com')) {
-    platform = 'tiktok';
-  }
-  if (platform === 'youtube' && videoId) {
-    return (
-      <iframe
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-        style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: 'none' }}
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-      />
-    );
-  }
-  if (platform === 'tiktok') {
-    return (
-      <div style={{ textAlign: 'center', padding: 32, background: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
-        <div style={{ fontSize: '2rem', marginBottom: 8 }}>🎵</div>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 12 }}>TikTok Video</p>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-outline">Open on TikTok →</a>
-      </div>
-    );
-  }
-  return <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Preview not available for this URL</p>;
+function VideoEmbedSlot({ url }) {
+  return <VideoEmbed url={url} />;
 }
 
 function EarnCredits({ data, setData, watchState, setWatchState, timerRef, sessionValid, setSessionValid }) {
@@ -156,7 +129,7 @@ function EarnCredits({ data, setData, watchState, setWatchState, timerRef, sessi
       <div className="glass-card" style={{ padding: 24 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, alignItems: 'start' }}>
           <div style={{ minHeight: 200 }}>
-            {getVideoEmbed(currentVideo)}
+            <VideoEmbedSlot url={currentVideo} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: 12 }}>⏱️</div>
@@ -224,6 +197,7 @@ function PromoteVideo({ data, setData }) {
   const [lang, setLang] = useState('English');
   const [spend, setSpend] = useState(10);
   const [campaignId, setCampaignId] = useState(null);
+  const [submittedUrl, setSubmittedUrl] = useState('');
   const [error, setError] = useState('');
 
   const handlePromote = () => {
@@ -238,19 +212,27 @@ function PromoteVideo({ data, setData }) {
     const newData = { ...data, credits: data.credits - spend, campaigns: [...data.campaigns, campaign] };
     setData(newData);
     setCampaignId(id);
+    setSubmittedUrl(url);
     setUrl('');
   };
 
   return (
     <div>
       {campaignId ? (
-        <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-          <h3 style={{ marginBottom: 12 }}>Campaign Created!</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>Your campaign ID:</p>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 16, fontFamily: 'monospace' }}>{campaignId}</div>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', marginBottom: 20 }}>Your video is now in the exchange. Other creators will watch it and earn credits.</p>
-          <button className="btn btn-secondary" onClick={() => setCampaignId(null)}>Create Another</button>
+        <div className="glass-card" style={{ padding: 32 }}>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+            <h3 style={{ marginBottom: 12 }}>Campaign Created!</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>Your campaign ID:</p>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 16, fontFamily: 'monospace' }}>{campaignId}</div>
+          </div>
+          <div style={{ maxWidth: 480, margin: '0 auto 20px' }}>
+            <VideoEmbed url={submittedUrl} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', marginBottom: 20 }}>Your video is now in the exchange. Other creators will watch it and earn credits.</p>
+            <button className="btn btn-secondary" onClick={() => setCampaignId(null)}>Create Another</button>
+          </div>
         </div>
       ) : (
         <div className="glass-card" style={{ padding: 24 }}>

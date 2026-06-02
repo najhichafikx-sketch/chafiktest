@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { VideoEmbed } from '@/lib/video-embed';
 
 const STORAGE_KEY = 'pv_feedback_exchange';
 
@@ -57,6 +58,7 @@ function SubmitVideo({ data, setData }) {
   const [title, setTitle] = useState('');
   const [goal, setGoal] = useState('');
   const [submitted, setSubmitted] = useState(null);
+  const [submittedUrl, setSubmittedUrl] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
@@ -68,16 +70,24 @@ function SubmitVideo({ data, setData }) {
     const newData = { ...data, campaigns: [...data.campaigns, campaign] };
     setData(newData);
     setSubmitted(id);
+    setSubmittedUrl(url);
     setUrl(''); setTitle(''); setGoal('');
   };
 
   if (submitted) return (
-    <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-      <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-      <h3 style={{ marginBottom: 12 }}>Submitted!</h3>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>Your video is now available for review.</p>
-      <div style={{ fontFamily: 'monospace', color: 'var(--neon-cyan)', fontSize: '1.1rem', marginBottom: 16 }}>{submitted}</div>
-      <button className="btn btn-secondary" onClick={() => setSubmitted(null)}>Submit Another</button>
+    <div className="glass-card" style={{ padding: 32 }}>
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+        <h3 style={{ marginBottom: 12 }}>Submitted!</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>Your video is now available for review.</p>
+        <div style={{ fontFamily: 'monospace', color: 'var(--neon-cyan)', fontSize: '1.1rem', marginBottom: 16 }}>{submitted}</div>
+      </div>
+      <div style={{ maxWidth: 480, margin: '0 auto 20px' }}>
+        <VideoEmbed url={submittedUrl} />
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <button className="btn btn-secondary" onClick={() => setSubmitted(null)}>Submit Another</button>
+      </div>
     </div>
   );
 
@@ -155,6 +165,10 @@ function ReviewVideos({ data, setData }) {
         <h3 style={{ marginBottom: 8 }}>Reviewing: {activeReview.title}</h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 4 }}>{activeReview.url}</p>
         <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginBottom: 16 }}>Goal: {activeReview.goal}</p>
+
+        <div style={{ maxWidth: 480, margin: '0 auto 20px' }}>
+          <VideoEmbed url={activeReview.url} />
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           {REVIEW_CRITERIA.map(c => (

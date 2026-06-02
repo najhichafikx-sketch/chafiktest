@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { VideoEmbed, getVideoEmbedUrl } from '@/lib/video-embed';
 import { SESSION_OPTIONS, DURATION_OPTIONS } from '@/lib/platforms-views-content';
 
 const STORAGE_KEY = 'pv_test_lab';
@@ -57,16 +58,10 @@ export default function AudienceTestLabPage() {
 }
 
 /* ---------- TEST SESSIONS ---------- */
-function getYouTubeEmbedId(url) {
-  if (!url) return null;
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
-}
 
 function TestSessionGridItem({ sessionNum, videoUrl, duration }) {
   const [status, setStatus] = useState('playing');
   const [timer, setTimer] = useState(duration);
-  const videoId = getYouTubeEmbedId(videoUrl);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -88,18 +83,7 @@ function TestSessionGridItem({ sessionNum, videoUrl, duration }) {
           color: status === 'completed' ? 'var(--neon-green)' : 'var(--neon-purple)'
         }}>{status === 'completed' ? '✓ Completed' : '▶ Playing'}</span>
       </div>
-      {videoId ? (
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-          style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, border: 'none' }}
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-        />
-      ) : (
-        <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Preview unavailable</span>
-        </div>
-      )}
+      <VideoEmbed url={videoUrl} />
       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
         ⏱ {timer}s / {duration}s
       </div>
