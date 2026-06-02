@@ -34,7 +34,8 @@ export default function sitemap() {
     'ai-youtube-script-writing', 'ai-thumbnail-prompts', 'youtube-seo-descriptions',
     'youtube-tag-strategy', 'youtube-seo-optimization', 'faceless-video-creation',
     'viral-shorts-strategy', 'storytelling-youtube-scripts', 'youtube-community-engagement',
-    'youtube-comment-management', 'video-content-repurposing'
+    'youtube-comment-management', 'video-content-repurposing',
+    'viral-exchange', 'feedback-exchange', 'audience-test-lab'
   ];
 
   const entries = [

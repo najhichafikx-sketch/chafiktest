@@ -69,6 +69,38 @@ export default function ViralExchangePage() {
   );
 }
 
+function getVideoEmbed(url) {
+  if (!url) return null;
+  let videoId = '';
+  let platform = '';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (match) { videoId = match[1]; platform = 'youtube'; }
+  } else if (url.includes('tiktok.com')) {
+    platform = 'tiktok';
+  }
+  if (platform === 'youtube' && videoId) {
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+        style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: 'none' }}
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+      />
+    );
+  }
+  if (platform === 'tiktok') {
+    return (
+      <div style={{ textAlign: 'center', padding: 32, background: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
+        <div style={{ fontSize: '2rem', marginBottom: 8 }}>🎵</div>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 12 }}>TikTok Video</p>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-outline">Open on TikTok →</a>
+      </div>
+    );
+  }
+  return <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Preview not available for this URL</p>;
+}
+
 function EarnCredits({ data, setData, watchState, setWatchState, timerRef, sessionValid, setSessionValid }) {
   const [countdown, setCountdown] = useState(0);
   const [currentVideo, setCurrentVideo] = useState('');
@@ -121,14 +153,20 @@ function EarnCredits({ data, setData, watchState, setWatchState, timerRef, sessi
 
   if (watchState === 'watching') {
     return (
-      <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: '2rem', marginBottom: 16 }}>⏱️</div>
-        <h3 style={{ marginBottom: 12 }}>Watching Video</h3>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 8, wordBreak: 'break-all' }}>{currentVideo}</p>
-        <div style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--neon-cyan)', margin: '20px 0' }}>{countdown}s</div>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Earning: {earning} credit{earning > 1 ? 's' : ''}</p>
-        <div style={{ width: '100%', height: 4, background: 'rgba(99,102,241,0.2)', borderRadius: 2, marginTop: 16, overflow: 'hidden' }}>
-          <div style={{ width: `${(1 - countdown / (earning === 3 ? 90 : earning === 2 ? 60 : 30)) * 100}%`, height: '100%', background: 'var(--neon-cyan)', transition: 'width 1s linear' }} />
+      <div className="glass-card" style={{ padding: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, alignItems: 'start' }}>
+          <div style={{ minHeight: 200 }}>
+            {getVideoEmbed(currentVideo)}
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: 12 }}>⏱️</div>
+            <h3 style={{ marginBottom: 8, fontSize: '1rem' }}>Watching</h3>
+            <div style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--neon-cyan)', margin: '12px 0' }}>{countdown}s</div>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Earning: {earning} credit{earning > 1 ? 's' : ''}</p>
+            <div style={{ width: '100%', height: 4, background: 'rgba(99,102,241,0.2)', borderRadius: 2, marginTop: 16, overflow: 'hidden' }}>
+              <div style={{ width: `${(1 - countdown / (earning === 3 ? 90 : earning === 2 ? 60 : 30)) * 100}%`, height: '100%', background: 'var(--neon-cyan)', transition: 'width 1s linear' }} />
+            </div>
+          </div>
         </div>
       </div>
     );

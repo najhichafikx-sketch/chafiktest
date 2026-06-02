@@ -57,6 +57,56 @@ export default function AudienceTestLabPage() {
 }
 
 /* ---------- TEST SESSIONS ---------- */
+function getYouTubeEmbedId(url) {
+  if (!url) return null;
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function TestSessionGridItem({ sessionNum, videoUrl, duration }) {
+  const [status, setStatus] = useState('playing');
+  const [timer, setTimer] = useState(duration);
+  const videoId = getYouTubeEmbedId(videoUrl);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) { setStatus('completed'); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="glass-card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+        <span style={{ fontWeight: 700, color: 'var(--neon-cyan)' }}>Session #{sessionNum}</span>
+        <span style={{
+          padding: '2px 8px', borderRadius: 999, fontSize: '0.7rem',
+          background: status === 'completed' ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
+          color: status === 'completed' ? 'var(--neon-green)' : 'var(--neon-purple)'
+        }}>{status === 'completed' ? '✓ Completed' : '▶ Playing'}</span>
+      </div>
+      {videoId ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+          style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, border: 'none' }}
+          allow="autoplay; encrypted-media"
+          allowFullScreen
+        />
+      ) : (
+        <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Preview unavailable</span>
+        </div>
+      )}
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+        ⏱ {timer}s / {duration}s
+      </div>
+    </div>
+  );
+}
+
 function TestSessions({ data, setData }) {
   const [url, setUrl] = useState('');
   const [sessions, setSessions] = useState(4);
@@ -70,6 +120,7 @@ function TestSessions({ data, setData }) {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const [activeSessions, setActiveSessions] = useState(null);
 
   const startTest = async () => {
     setError('');
@@ -90,10 +141,33 @@ function TestSessions({ data, setData }) {
     };
     setData({ ...data, sessions: [...data.sessions, session] });
     setRunning(false);
+    setActiveSessions({ videoUrl: url, count: sessions, duration });
   };
+
+  const gridCols = activeSessions?.count <= 2 ? 2 : activeSessions?.count <= 4 ? 2 : 3;
 
   return (
     <div>
+      {activeSessions && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: '1rem' }}>Live Test Sessions</h3>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setActiveSessions(null); setUrl(''); }}>
+              {activeSessions ? 'New Test' : ''}
+            </button>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+            gap: 16
+          }}>
+            {Array.from({ length: activeSessions.count }).map((_, i) => (
+              <TestSessionGridItem key={i} sessionNum={i + 1} videoUrl={activeSessions.videoUrl} duration={activeSessions.duration} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {running ? (
         <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', marginBottom: 16 }}>⏳</div>
@@ -103,7 +177,7 @@ function TestSessions({ data, setData }) {
             <div style={{ width: `${(progress / sessions) * 100}%`, height: '100%', background: 'var(--gradient-primary)', borderRadius: 3, transition: 'width 0.3s ease' }} />
           </div>
         </div>
-      ) : (
+      ) : !activeSessions && (
         <div className="glass-card" style={{ padding: 24 }}>
           <h3 style={{ marginBottom: 16 }}>Configure Test Session</h3>
           <div className="form-group" style={{ marginBottom: 16 }}>
@@ -172,7 +246,7 @@ function TestSessions({ data, setData }) {
         </div>
       )}
 
-      {data.sessions.length > 0 && (
+      {data.sessions.length > 0 && !activeSessions && (
         <div style={{ marginTop: 24 }}>
           <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Test History</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
