@@ -10,7 +10,7 @@ import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktest.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com';
 const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX';
 
 export const metadata = {
@@ -21,6 +21,7 @@ export const metadata = {
   },
   description: 'Create stunning content with AI superpowers. Chafiktech Ai provides next-generation AI tools for content creation, SEO optimization, and digital product development.',
   keywords: ['AI tools', 'content creation', 'SEO article generator', 'image to prompt', 'video to prompt', 'AI humanizer', 'TikTok tools', 'YouTube suite', 'digital product creator'],
+  alternates: { canonical: siteUrl },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -46,7 +47,6 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="canonical" href={siteUrl} />
         <JsonLd data={WebsiteSchema({
           name: 'Chafiktech Ai',
           url: siteUrl,

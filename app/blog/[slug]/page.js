@@ -53,6 +53,7 @@ export async function generateMetadata({ params }) {
       title: post.title,
       description: post.excerpt
     },
+    alternates: { canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/blog/${slug}` },
     robots: { index: true, follow: true }
   };
 }
@@ -75,7 +76,7 @@ export default async function BlogArticle({ params }) {
     author: { '@type': 'Organization', name: 'Chafiktech Ai' },
     publisher: { '@type': 'Organization', name: 'Chafiktech Ai' },
     datePublished: '2026-01-01',
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://chafiktest.vercel.app/blog/${post.slug}` }
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/blog/${post.slug}` }
   };
 
   return (
@@ -139,7 +140,7 @@ export default async function BlogArticle({ params }) {
 
 async function BlogContentFromDB({ slug }) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktest.vercel.app'}/api/blog/${slug}`, { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/api/blog/${slug}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.success && data.post?.content) {
       return <div className="blog-article-content" style={{ lineHeight: 1.8, fontSize: '1rem', color: 'var(--text-secondary)' }}

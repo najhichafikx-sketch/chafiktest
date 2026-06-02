@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { trackPageView } from '@/lib/ga4';
 
 export default function AnalyticsTracker() {
   const pathname = usePathname();
@@ -24,11 +25,7 @@ export default function AnalyticsTracker() {
         })
       }).catch(() => {});
 
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('config', window.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX', {
-          page_path: pathname
-        });
-      }
+      trackPageView(pathname);
     }
   }, [pathname]);
 

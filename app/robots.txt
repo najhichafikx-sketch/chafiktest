@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /admin-login
 Disallow: /api/
-Sitemap: https://chafiktest.vercel.app/sitemap.xml
+Sitemap: https://www.chafiktech.com/sitemap.xml
