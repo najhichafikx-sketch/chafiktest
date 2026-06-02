@@ -70,56 +70,72 @@ function ToolsSection() {
           <h2 className="section-title">Powerful AI Tools for Creators</h2>
           <p className="section-subtitle">Everything you need to ideate, create, and optimize content across all platforms.</p>
         </div>
-        <div className="tools-grid">
-          <ToolCard href="/tools/seo-article-generator" icon="📝" name="SEO Article Generator" desc="Generate 100% original SEO articles, titles, keywords, and topic ideas optimized for Google & AdSense." badge="NEW" />
-          <ToolCard href="/tools/image-to-prompt" icon="📸" name="Image to Prompt Generator" desc="Upload any image and instantly generate an ultra-detailed, professional prompt for Midjourney & DALL-E." badge="HOT" />
-          <ToolCard href="/tools/video-to-prompt" icon="🎥" name="Video To Prompt" desc="Extract frames, analyze scenes, lighting, and camera angles. Generate 5 types of AI prompts from any video." />
-          <ToolCard href="/tools/prompt-viral" icon="🚀" name="Prompt Viral" desc="Generate highly engaging prompts tailored for major AI image/text models to create viral content." />
-          <ToolCard href="/tools/prompt-article" icon="📄" name="Article Prompt Generator" desc="Generate powerful AI writing prompts for blog posts, tutorials, listicles, and reviews." />
+
+        <CategorySection title="Content Creation" desc="Generate, optimize, and humanize content that ranks and converts.">
+          <ToolCard href="/tools/seo-article-generator" icon="📝" name="SEO Article Generator" desc="Generate long-form SEO-optimized articles designed to rank on Google and attract organic traffic." />
+          <ToolCard href="/tools/prompt-viral" icon="🚀" name="Prompt Viral Generator" desc="Generate highly engaging prompts tailored for major AI models to create viral content." />
           <ToolCard href="/tools/ai-humanizer" icon="🤖" name="AI Content Detector & Humanizer" desc="Detect AI-generated text instantly and rewrite it to sound naturally human, engaging, and SEO-ready." />
-          <ToolCard href="/tools/ad-copy-generator" icon="📢" name="Ad Copy Generator" desc="Create high-converting ad copy for Facebook, Google, Instagram, LinkedIn, and TikTok." />
-          <ToolCard href="/tools/sales-copy-generator" icon="💰" name="Sales Copy Generator" desc="Generate persuasive sales copy using AIDA, PAS, and FAB frameworks proven to convert." />
-          <ToolCard href="/tools/product-description-generator" icon="🏷️" name="Product Description Generator" desc="Create compelling product descriptions optimized for conversions across all ecommerce platforms." />
-          <ToolCard href="/tools/product-title-generator" icon="📛" name="Product Title Generator" desc="Generate SEO-optimized, click-worthy product titles for Amazon, Etsy, eBay, and Shopify." />
-          <ToolCard href="/tools/product-idea-finder" icon="💡" name="Product Idea Finder" desc="Discover data-backed profitable product ideas with market analysis and competition insights." />
-          <ToolCard href="/tools/product-image-enhancer" icon="🖼️" name="Product Image Enhancer" desc="Enhance product images with background removal, color correction, upscaling, and AI improvements." />
-          <ToolCard href="/tools/amazon-listing-generator" icon="📦" name="Amazon Listing Generator" desc="Create optimized Amazon listings with SEO titles, bullet points, descriptions, and backend keywords." />
-          <ToolCard href="/tools/etsy-listing-generator" icon="🛍️" name="Etsy Listing Generator" desc="Generate Etsy-optimized listings with 13 tags, SEO titles, and compelling descriptions." />
-          <ToolCard href="/tools/shopify-seo-generator" icon="🛒" name="Shopify SEO Generator" desc="Optimize your Shopify store with meta titles, descriptions, and product text for Google rankings." />
-          <ToolCard href="/tools/landing-page-generator" icon="🖥️" name="Landing Page Generator" desc="Generate complete landing page copy using AIDA structure for SaaS, ecommerce, and lead gen." />
-          <ToolCard href="/tools/digital-product-creator" icon="💻" name="Digital Product Creator" desc="Create ebooks, courses, templates, and software with AI-guided product development." />
-          <ToolCard href="/tools/digital-product-name-generator" icon="🏷️" name="Digital Product Name Generator" desc="Generate catchy, brandable names for your digital products that stand out in the market." />
-          <ToolCard href="/tools/digital-product-email-writer" icon="📧" name="Digital Product Email Writer" desc="Create high-converting email copy for product launches, nurture sequences, and sales campaigns." />
-          <ToolCard href="/tools/dropshipping-research" icon="🔍" name="Dropshipping Research" desc="Find winning dropshipping products with supplier recommendations and profit margin analysis." />
-          <ToolCard href="/tools/pricing-optimizer" icon="📊" name="Pricing Optimizer" desc="Get AI-powered pricing recommendations based on cost analysis, market data, and psychology." />
-          <ToolCard href="/tools/review-response-generator" icon="⭐" name="Review Response Generator" desc="Generate professional, empathetic responses to customer reviews across all platforms." />
-          <ToolCard href="/tools/tiktok-tools" icon="🎵" name="AI Tiktok Creator Suite" desc="Generate viral scripts, find trending sounds, and optimize your hashtags for TikTok growth." />
-          <ToolCard href="/tools/youtube-creator" icon="📺" name="AI YouTube Creator Suite" desc="14 AI tools for viral ideas, scripts, titles, thumbnails, SEO, Shorts, and channel growth." badge="NEW" />
-          <ToolCard href="/tools/faceless-video-generator" icon="🎭" name="Faceless Video Generator" desc="Generate complete faceless video packages with scripts, voiceovers, and visual prompts." />
-          <ToolCard href="/tools/viral-shorts-generator" icon="📱" name="Viral Shorts Generator" desc="Create viral YouTube Shorts scripts optimized for 30, 45, and 60 second durations." />
-        </div>
+        </CategorySection>
+
+        <CategorySection title="AI Prompt Tools" desc="Transform images and videos into detailed AI prompts for any generator.">
+          <ToolCard href="/tools/image-to-prompt" icon="📸" name="Image to Prompt Generator" desc="Upload any image and instantly generate ultra-detailed professional prompts for Midjourney, DALL-E, and Stable Diffusion." />
+          <ToolCard href="/tools/video-to-prompt" icon="🎥" name="Video to Prompt Generator" desc="Upload any video and transform it into detailed AI prompts for ChatGPT, Midjourney, Veo, Kling, and other AI tools." />
+        </CategorySection>
+
+        <CategorySection title="Creator Suites" desc="Complete toolkits for YouTube, TikTok, and digital product creators.">
+          <ToolCard href="/tools/digital-product-creator" icon="💻" name="AI Digital Creator Suite" desc="Create ebooks, courses, templates, and software with AI-guided product development and marketing tools." />
+          <ToolCard href="/tools/youtube-creator" icon="📺" name="AI YouTube Creator Suite" desc="Complete toolkit for YouTube creators including titles, scripts, hooks, SEO optimization, thumbnails, and viral content ideas." />
+          <ToolCard href="/tools/tiktok-tools" icon="🎵" name="AI TikTok Creator Suite" desc="Generate viral scripts, find trending sounds, and optimize hashtags for explosive TikTok growth." />
+        </CategorySection>
+
+        <CTAAllTools />
       </div>
     </section>
   );
 }
 
-function ToolCard({ href, icon, name, desc, badge }) {
+function CategorySection({ title, desc, children }) {
   return (
-    <Link href={href} className="tool-card" style={{ position: 'relative', overflow: 'hidden' }}>
-      {badge && (
-        <div style={{
-          position: 'absolute', top: 14, right: 14,
-          background: badge === 'HOT' ? 'linear-gradient(135deg,#ec4899,#f43f5e)' : 'linear-gradient(135deg,#6366f1,#a855f7)',
-          color: '#fff', fontSize: '0.66rem', fontWeight: 800,
-          padding: '3px 9px', borderRadius: 999, letterSpacing: '0.05em',
-          textTransform: 'uppercase'
-        }}>{badge}</div>
-      )}
-      <div className="tool-icon">{icon}</div>
-      <h3 className="tool-name">{name}</h3>
-      <p className="tool-description">{desc}</p>
-      <span className="tool-price">Free</span>
+    <div style={{ marginBottom: 48 }}>
+      <div style={{ marginBottom: 20, textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{title}</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', maxWidth: 480, margin: '0 auto' }}>{desc}</p>
+      </div>
+      <div className="tools-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ToolCard({ href, icon, name, desc }) {
+  return (
+    <Link href={href} className="tool-card" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1 }}>
+        <div className="tool-icon" style={{ fontSize: '2.2rem', marginBottom: 12 }}>{icon}</div>
+        <h3 className="tool-name" style={{ fontSize: '1rem', marginBottom: 8 }}>{name}</h3>
+        <p className="tool-description" style={{ fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 16 }}>{desc}</p>
+      </div>
+      <span className="btn btn-primary" style={{ width: '100%', textAlign: 'center', padding: '8px 16px', fontSize: '0.85rem' }}>
+        Open Tool →
+      </span>
     </Link>
+  );
+}
+
+function CTAAllTools() {
+  return (
+    <div className="glass-card" style={{ marginTop: 48, padding: '40px 24px', textAlign: 'center' }}>
+      <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 12, fontFamily: 'var(--font-display)' }}>
+        Explore All AI Tools
+      </h3>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
+        Access our complete collection of AI-powered tools for content creators, marketers, ecommerce sellers, and businesses.
+      </p>
+      <Link href="/tools" className="btn btn-primary btn-lg">
+        View All Tools →
+      </Link>
+    </div>
   );
 }
 
