@@ -31,6 +31,7 @@ export default function AdminLayout({ children }) {
             <Link href="/admin/analytics" className="btn btn-secondary btn-sm">Analytics</Link>
             <Link href="/admin/settings" className="btn btn-secondary btn-sm">Settings</Link>
             <Link href="/admin/api-settings" className="btn btn-secondary btn-sm">API Keys</Link>
+            <Link href="/admin/platforms-views" className="btn btn-secondary btn-sm">Platforms</Link>
           </div>
         </div>
         {children}

@@ -88,6 +88,12 @@ function ToolsSection() {
           <ToolCard href="/tools/tiktok-tools" icon="🎵" name="AI TikTok Creator Suite" desc="Generate viral scripts, find trending sounds, and optimize hashtags for explosive TikTok growth." />
         </CategorySection>
 
+        <CategorySection title="Platforms Views" desc="Professional creator growth suite for YouTube and TikTok creators.">
+          <ToolCard href="/platforms-views/viral-exchange" icon="🔄" name="Viral Exchange" desc="Earn credits by watching other creators videos and spend credits to promote your own content on YouTube and TikTok." />
+          <ToolCard href="/platforms-views/feedback-exchange" icon="💬" name="Feedback Exchange" desc="Get structured peer reviews on your videos with scores on hook, editing, audio, storytelling, retention, and CTA." />
+          <ToolCard href="/platforms-views/audience-test-lab" icon="🧪" name="Audience Test Lab" desc="Test audience behavior, analyze retention, compare hooks, battle thumbnails, and predict viral scores before publishing." />
+        </CategorySection>
+
         <CTAAllTools />
       </div>
     </section>

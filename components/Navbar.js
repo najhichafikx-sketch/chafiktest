@@ -37,6 +37,7 @@ export default function Navbar() {
             <Link href="/" className="nav-link">Home</Link>
             <Link href="/#tools" className="nav-link">Tools</Link>
             <Link href="/blog" className="nav-link">Blog</Link>
+            <Link href="/platforms-views" className="nav-link">Platforms Views</Link>
             <Link href="/tools/youtube-creator" className="nav-link">YouTube Suite</Link>
             <Link href="/pricing" className="nav-link">Pricing</Link>
             <Link href="/about" className="nav-link">About</Link>
@@ -57,6 +58,7 @@ export default function Navbar() {
         <Link href="/#tools" className="nav-link" onClick={() => setMobileOpen(false)}>Tools</Link>
         <Link href="/pricing" className="nav-link" onClick={() => setMobileOpen(false)}>Pricing</Link>
         <Link href="/blog" className="nav-link" onClick={() => setMobileOpen(false)}>Blog</Link>
+        <Link href="/platforms-views" className="nav-link" onClick={() => setMobileOpen(false)}>Platforms Views</Link>
         <Link href="/tools/youtube-creator" className="nav-link" onClick={() => setMobileOpen(false)}>YouTube Suite</Link>
         <Link href="/login" className="nav-link" onClick={() => setMobileOpen(false)}>Log In</Link>
         <Link href="/register" className="nav-link" onClick={() => setMobileOpen(false)}>Sign Up</Link>

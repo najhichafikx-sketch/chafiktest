@@ -49,6 +49,13 @@ export default function Footer() {
             <Link href="/tools/thumbnail-prompt-generator">Thumbnail Prompts</Link>
           </div>
           <div className="footer-column">
+            <h4>Platforms Views</h4>
+            <Link href="/platforms-views">Overview</Link>
+            <Link href="/platforms-views/viral-exchange">Viral Exchange</Link>
+            <Link href="/platforms-views/feedback-exchange">Feedback Exchange</Link>
+            <Link href="/platforms-views/audience-test-lab">Audience Test Lab</Link>
+          </div>
+          <div className="footer-column">
             <h4>Company</h4>
             <Link href="/about">About Us</Link>
             <Link href="/contact">Contact Us</Link>
@@ -107,6 +114,9 @@ function QuickToolsSidebar() {
       </Link>
       <Link href="/tools/ai-humanizer" className="gfs-link">
         <span>🧠</span><span className="gfs-text">AI Humanizer</span>
+      </Link>
+      <Link href="/platforms-views" className="gfs-link">
+        <span>🌐</span><span className="gfs-text">Platforms Views</span>
       </Link>
     </div>
   );

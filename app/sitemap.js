@@ -2,7 +2,9 @@ export default function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktest.vercel.app';
   const staticPages = [
     '/', '/about', '/contact', '/faq', '/privacy', '/terms', '/disclaimer',
-    '/pricing', '/login', '/register', '/dashboard', '/blog'
+    '/pricing', '/login', '/register', '/dashboard', '/blog',
+    '/platforms-views', '/platforms-views/viral-exchange',
+    '/platforms-views/feedback-exchange', '/platforms-views/audience-test-lab'
   ];
   const tools = [
     'seo-article-generator', 'image-to-prompt', 'video-to-prompt', 'tiktok-tools',
