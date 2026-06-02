@@ -10,7 +10,7 @@ import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktech.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktest.vercel.app';
 const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX';
 
 export const metadata = {
@@ -37,7 +37,7 @@ export const metadata = {
     images: ['/og-image.png']
   },
   robots: { index: true, follow: true },
-  icons: { icon: '/favicon.ico' }
+  icons: { icon: '/favicon.svg' }
 };
 
 export default function RootLayout({ children }) {
@@ -55,7 +55,7 @@ export default function RootLayout({ children }) {
         <JsonLd data={OrganizationSchema({
           name: 'Chafiktech Ai',
           url: siteUrl,
-          logo: `${siteUrl}/favicon.ico`
+          logo: `${siteUrl}/favicon.svg`
         })} />
         <JsonLd data={SoftwareAppSchema({
           name: 'Chafiktech Ai',

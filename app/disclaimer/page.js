@@ -1,6 +1,8 @@
 export const metadata = {
   title: 'Disclaimer',
-  description: 'Chafiktech Ai Disclaimer - Important information about the use of AI-generated content on our platform.'
+  description: 'Chafiktech Ai Disclaimer - Important information about the use of AI-generated content on our platform.',
+  openGraph: { title: 'Disclaimer - Chafiktech Ai', description: 'Important information about AI-generated content usage on Chafiktech Ai.' },
+  twitter: { card: 'summary_large_image', title: 'Disclaimer - Chafiktech Ai', description: 'Important information about AI-generated content usage on Chafiktech Ai.' }
 };
 
 export default function DisclaimerPage() {

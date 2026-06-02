@@ -1,6 +1,8 @@
 export const metadata = {
   title: 'Privacy Policy',
-  description: 'Chafiktech Ai Privacy Policy - Learn how we collect, use, and protect your personal data.'
+  description: 'Chafiktech Ai Privacy Policy - Learn how we collect, use, and protect your personal data.',
+  openGraph: { title: 'Privacy Policy - Chafiktech Ai', description: 'Learn how Chafiktech Ai collects, uses, and protects your personal data.' },
+  twitter: { card: 'summary_large_image', title: 'Privacy Policy - Chafiktech Ai', description: 'Learn how Chafiktech Ai collects, uses, and protects your personal data.' }
 };
 
 export default function PrivacyPage() {

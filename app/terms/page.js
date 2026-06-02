@@ -1,6 +1,8 @@
 export const metadata = {
   title: 'Terms of Service',
-  description: 'Chafiktech Ai Terms of Service - Guidelines for using our AI-powered content creation platform.'
+  description: 'Chafiktech Ai Terms of Service - Guidelines for using our AI-powered content creation platform.',
+  openGraph: { title: 'Terms of Service - Chafiktech Ai', description: 'Guidelines for using the Chafiktech Ai AI-powered content creation platform.' },
+  twitter: { card: 'summary_large_image', title: 'Terms of Service - Chafiktech Ai', description: 'Guidelines for using the Chafiktech Ai AI-powered content creation platform.' }
 };
 
 export default function TermsPage() {

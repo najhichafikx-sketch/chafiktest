@@ -2,7 +2,9 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'AI YouTube Creator Suite - 14 AI Tools for YouTube Growth',
-  description: 'Complete AI-powered YouTube Creator Suite with 14 tools for viral ideas, scripts, titles, thumbnails, SEO, Shorts, and more.'
+  description: 'Complete AI-powered YouTube Creator Suite with 14 tools for viral ideas, scripts, titles, thumbnails, SEO, Shorts, and more.',
+  openGraph: { title: 'AI YouTube Creator Suite - 14 AI Tools for YouTube Growth', description: 'Complete AI-powered YouTube Creator Suite with 14 tools for viral ideas, scripts, titles, thumbnails, SEO, Shorts, and more.' },
+  twitter: { title: 'AI YouTube Creator Suite - 14 AI Tools for YouTube Growth', description: 'Complete AI-powered YouTube Creator Suite with 14 tools for viral ideas, scripts, titles, thumbnails, SEO, Shorts, and more.' }
 };
 
 const YOUTUBE_TOOLS = [
@@ -107,5 +109,5 @@ export default function YouTubeCreatorPage() {
         </div>
       </div>
     </section>
-  );
-}
+  )
+};

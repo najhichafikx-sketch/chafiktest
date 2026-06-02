@@ -3,7 +3,9 @@ import { FAQPageSchema, JsonLd } from '@/lib/seo';
 
 export const metadata = {
   title: 'FAQ',
-  description: 'Frequently asked questions about Chafiktech Ai - pricing, features, API access, and more.'
+  description: 'Frequently asked questions about Chafiktech Ai - pricing, features, API access, and more.',
+  openGraph: { title: 'FAQ - Chafiktech Ai', description: 'Frequently asked questions about Chafiktech Ai pricing, features, and API access.' },
+  twitter: { card: 'summary_large_image', title: 'FAQ - Chafiktech Ai', description: 'Frequently asked questions about Chafiktech Ai pricing, features, and API access.' }
 };
 
 const faqQuestions = [
