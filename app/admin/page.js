@@ -53,6 +53,7 @@ export default function AdminPage() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/admin/tools" className="btn btn-secondary btn-sm">Tools</Link>
             <Link href="/admin/ads" className="btn btn-secondary btn-sm">Ads</Link>
+            <Link href="/admin/revenue-dashboard" className="btn btn-secondary btn-sm">Revenue</Link>
             <Link href="/admin/analytics" className="btn btn-secondary btn-sm">Analytics</Link>
             <Link href="/admin/settings" className="btn btn-secondary btn-sm">Settings</Link>
             <Link href="/admin/api-settings" className="btn btn-secondary btn-sm">API Keys</Link>

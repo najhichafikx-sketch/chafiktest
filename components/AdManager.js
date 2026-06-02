@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { trackAdImpression, trackAdClick } from '@/lib/ga4';
 
 const AD_VARIANTS = {
   sidebar: [{ size: '300x250' }, { size: '160x600' }, { size: '300x600' }],
@@ -79,12 +80,9 @@ export default function AdManager({ location, toolId }) {
         setVisible(true);
         tracked.current = true;
 
-        track(sessionId.current, 'ad_impression', {
-          slot: location,
-          toolId: toolId || '',
-          variant: variant?.size || 'default',
-          url: window.location.pathname
-        });
+        const meta = { slot: location, toolId, variant: variant?.size || 'default', url: window.location.pathname };
+        track(sessionId.current, 'ad_impression', meta);
+        trackAdImpression({ slot: location, toolId, variant: variant?.size || 'default' });
 
         if (obs) obs.disconnect();
       }
@@ -97,12 +95,9 @@ export default function AdManager({ location, toolId }) {
   }, [adData, variant, location, toolId]);
 
   const handleClick = useCallback(() => {
-    track(sessionId.current, 'ad_click', {
-      slot: location,
-      toolId: toolId || '',
-      variant: variant?.size || 'default',
-      url: window.location.pathname
-    });
+    const meta = { slot: location, toolId, variant: variant?.size || 'default', url: window.location.pathname };
+    track(sessionId.current, 'ad_click', meta);
+    trackAdClick({ slot: location, toolId, variant: variant?.size || 'default' });
   }, [location, toolId, variant]);
 
   if (!loaded) {

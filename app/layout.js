@@ -11,7 +11,7 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com';
-const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX';
+const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-GWVTS5V577';
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -75,7 +75,7 @@ export default function RootLayout({ children }) {
         <Script src="https://pl29606009.effectivecpmnetwork.com/ee/6e/86/ee6e86a80fc2e598900177826353088a.js" strategy="afterInteractive" />
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || []; window.GA_MEASUREMENT_ID = '${gaId}'; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaId}');`}
+          {`window.dataLayer = window.dataLayer || []; window.GA_MEASUREMENT_ID = '${gaId}'; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaId}', { page_path: window.location.pathname });`}
         </Script>
       </body>
     </html>

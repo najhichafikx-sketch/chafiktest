@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AdManager from '@/components/AdManager';
+import AdToolSlot from '@/components/AdToolSlot';
 import { TOOL_ARTICLES, RELATED_TOOLS, USAGE_GUIDES, FAQS, TOOL_NAMES } from '@/lib/tool-content';
+import { getAdSlotsForTool, getMonetizationProfile } from '@/lib/monetization';
 
 function trackToolUsage(toolId) {
   const sid = localStorage.getItem('session_id') || crypto.randomUUID();
@@ -25,6 +27,10 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
   const relatedIds = RELATED_TOOLS[toolId] || [];
   const usageGuide = USAGE_GUIDES[toolId];
   const faqItems = FAQS[toolId] || [];
+
+  const monetization = useMemo(() => getMonetizationProfile(toolId), [toolId]);
+  const adSlots = useMemo(() => getAdSlotsForTool(toolId), [toolId]);
+  const hasSlot = (slot) => adSlots.includes(slot);
 
   function fillExample(text) {
     setInput(text);
@@ -112,12 +118,12 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
           <p className="tool-page-desc">{description}</p>
         </div>
 
-        <AdManager location="content_top" toolId={toolId} />
+        {hasSlot('top') && <AdToolSlot position="top" toolId={toolId} />}
 
         <div className="tool-layout" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <div className="tool-workspace" style={{ flex: 1, minWidth: 0 }}>
 
-            <AdManager location="in_tool" toolId={toolId} />
+            {hasSlot('mid') && <AdToolSlot position="mid" toolId={toolId} />}
 
             {usageGuide && (
               <div className="tool-section">
@@ -260,6 +266,7 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
           )}
         </div>
 
+        {hasSlot('bottom') && <AdToolSlot position="bottom" toolId={toolId} />}
         <AdManager location="content_bottom" toolId={toolId} />
       </div>
     </section>
