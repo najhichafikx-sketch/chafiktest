@@ -4,6 +4,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import AdScript from '@/components/AdScript';
 import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/lib/seo';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -64,11 +65,11 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-mesh bg-grid">
         <AnalyticsTracker />
+        <AdScript />
         <Navbar />
         {children}
         <Footer />
 
-        <Script src="https://pl29606008.effectivecpmnetwork.com/c2/dc/af/c2dcaf12d7d28b9604b8957217fbf8d4.js" strategy="afterInteractive" data-cfasync="false" />
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; window.GA_MEASUREMENT_ID = '${gaId}'; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaId}', { page_path: window.location.pathname });`}
