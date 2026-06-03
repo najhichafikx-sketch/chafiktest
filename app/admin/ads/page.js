@@ -64,7 +64,9 @@ export default function AdminAdsPage() {
       content_top: 'In-content ad above tool results',
       content_bottom: 'In-content ad below tool results',
       footer: 'Footer banner at bottom of every page',
-      popup: 'Floating popup ad (bottom-right corner)'
+      in_tool: 'Ad inside tool interface',
+      loading_state: 'Ad shown during tool loading',
+      mid_result: 'Ad between results'
     };
     return descs[loc] || '';
   }
@@ -169,8 +171,7 @@ export default function AdminAdsPage() {
               These scripts are loaded on every page via next/script with afterInteractive strategy.
             </p>
             <div style={{ background: 'var(--bg-tertiary)', padding: 16, borderRadius: 8, fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              pl29606008.effectivecpmnetwork.com<br/>
-              pl29606009.effectivecpmnetwork.com
+              pl29606008.effectivecpmnetwork.com (auto ads)
             </div>
           </div>
         </div>

@@ -3,7 +3,6 @@ import Script from 'next/script';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import AdManager from '@/components/AdManager';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/lib/seo';
 
@@ -64,15 +63,12 @@ export default function RootLayout({ children }) {
         })} />
       </head>
       <body className="bg-mesh bg-grid">
-        <AdManager location="header" />
         <AnalyticsTracker />
         <Navbar />
         {children}
-        <AdManager location="footer" />
         <Footer />
 
-        <Script src="https://pl29606008.effectivecpmnetwork.com/c2/dc/af/c2dcaf12d7d28b9604b8957217fbf8d4.js" strategy="afterInteractive" />
-        <Script src="https://pl29606009.effectivecpmnetwork.com/ee/6e/86/ee6e86a80fc2e598900177826353088a.js" strategy="afterInteractive" />
+        <Script src="https://pl29606008.effectivecpmnetwork.com/c2/dc/af/c2dcaf12d7d28b9604b8957217fbf8d4.js" strategy="afterInteractive" data-cfasync="false" />
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; window.GA_MEASUREMENT_ID = '${gaId}'; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaId}', { page_path: window.location.pathname });`}
