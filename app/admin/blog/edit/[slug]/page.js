@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 
@@ -9,14 +9,17 @@ export default function EditBlogPost() {
   const params = useParams();
   const slug = params.slug;
   const isNew = slug === 'new';
+  const editorRef = useRef(null);
 
   const [form, setForm] = useState({
     slug: '', title: '', content: '', excerpt: '', category: 'General',
     tags: '', author: 'Chafiktech Ai', meta_description: '',
+    seo_title: '', keywords: '',
     reading_time: 5, status: 'draft', featured_image: ''
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [editorReady, setEditorReady] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -37,6 +40,8 @@ export default function EditBlogPost() {
               tags: Array.isArray(p.tags) ? p.tags.join(', ') : p.tags || '',
               author: p.author || 'Chafiktech Ai',
               meta_description: p.meta_description || '',
+              seo_title: p.seo_title || p.title || '',
+              keywords: Array.isArray(p.keywords) ? p.keywords.join(', ') : p.keywords || '',
               reading_time: p.reading_time || 5,
               status: p.status || 'draft',
               featured_image: p.featured_image || ''
@@ -47,10 +52,57 @@ export default function EditBlogPost() {
       .catch(() => {});
   }, [slug, isNew, router]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.tinymce) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js';
+    script.onload = () => { setEditorReady(true); };
+    document.head.appendChild(script);
+    return () => { if (window.tinymce) window.tinymce.remove(); };
+  }, []);
+
+  useEffect(() => {
+    if (!editorReady || !editorRef.current) return;
+    const id = 'content-editor';
+    const ta = document.createElement('textarea');
+    ta.id = id;
+    ta.value = form.content;
+    editorRef.current.innerHTML = '';
+    editorRef.current.appendChild(ta);
+
+    window.tinymce.init({
+      selector: `#${id}`,
+      height: 500,
+      menubar: true,
+      plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help',
+      toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | table link image | code fullscreen help',
+      setup: (ed) => {
+        ed.on('init', () => { ed.setContent(form.content); });
+        ed.on('change', () => { setForm(f => ({ ...f, content: ed.getContent() })); });
+      }
+    });
+
+    return () => {
+      if (window.tinymce && window.tinymce.get(id)) window.tinymce.get(id).destroy();
+    };
+  }, [editorReady]);
+
+  function autoSlug(val) {
+    setForm(f => ({
+      ...f,
+      title: val,
+      slug: f.slug || val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    }));
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
     setMessage('');
+
+    if (window.tinymce && window.tinymce.get('content-editor')) {
+      form.content = window.tinymce.get('content-editor').getContent();
+    }
 
     const token = localStorage.getItem('admin_token');
     if (!token) { router.push('/admin-login'); return; }
@@ -58,6 +110,7 @@ export default function EditBlogPost() {
     const payload = {
       ...form,
       tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      keywords: form.keywords.split(',').map(k => k.trim()).filter(Boolean),
       reading_time: parseInt(form.reading_time) || 5
     };
 
@@ -98,12 +151,12 @@ export default function EditBlogPost() {
       <form onSubmit={handleSave}>
         <div className="row g-3">
           <div className="col-md-6">
-            <label className="form-label">Slug</label>
-            <input className="form-control" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} required placeholder="my-article-slug" />
+            <label className="form-label">Title</label>
+            <input className="form-control" value={form.title} onChange={e => autoSlug(e.target.value)} required placeholder="Article Title" />
           </div>
           <div className="col-md-6">
-            <label className="form-label">Title</label>
-            <input className="form-control" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required placeholder="Article Title" />
+            <label className="form-label">Slug</label>
+            <input className="form-control" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} required placeholder="my-article-slug" />
           </div>
           <div className="col-md-4">
             <label className="form-label">Category</label>
@@ -124,21 +177,42 @@ export default function EditBlogPost() {
               <option value="published">Published</option>
             </select>
           </div>
-          <div className="col-12">
+          <div className="col-md-6">
+            <label className="form-label">SEO Title</label>
+            <input className="form-control" value={form.seo_title} onChange={e => setForm({...form, seo_title: e.target.value})} placeholder="SEO title (leave empty to use article title)" />
+          </div>
+          <div className="col-md-6">
             <label className="form-label">Meta Description</label>
             <textarea className="form-control" rows="2" value={form.meta_description} onChange={e => setForm({...form, meta_description: e.target.value})} placeholder="SEO meta description (150-160 chars)" maxLength={160} />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Keywords</label>
+            <input className="form-control" value={form.keywords} onChange={e => setForm({...form, keywords: e.target.value})} placeholder="SEO, AI, content marketing" />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Tags</label>
+            <input className="form-control" value={form.tags} onChange={e => setForm({...form, tags: e.target.value})} placeholder="tag1, tag2, tag3" />
+          </div>
+          <div className="col-6">
+            <label className="form-label">Featured Image URL</label>
+            <input className="form-control" value={form.featured_image} onChange={e => setForm({...form, featured_image: e.target.value})} placeholder="https://example.com/image.jpg" />
+          </div>
+          <div className="col-6">
+            {form.featured_image && (
+              <div>
+                <label className="form-label">Preview</label>
+                <img src={form.featured_image} alt="" className="img-fluid rounded border" style={{ maxHeight: 120 }} onError={e => e.target.style.display = 'none'} />
+              </div>
+            )}
           </div>
           <div className="col-12">
             <label className="form-label">Excerpt</label>
             <textarea className="form-control" rows="2" value={form.excerpt} onChange={e => setForm({...form, excerpt: e.target.value})} placeholder="Short summary for blog listing" />
           </div>
           <div className="col-12">
-            <label className="form-label">Tags (comma separated)</label>
-            <input className="form-control" value={form.tags} onChange={e => setForm({...form, tags: e.target.value})} placeholder="SEO, AI, content marketing" />
-          </div>
-          <div className="col-12">
-            <label className="form-label">Content (HTML)</label>
-            <textarea className="form-control" rows="20" value={form.content} onChange={e => setForm({...form, content: e.target.value})} placeholder="<h2>Introduction</h2><p>Your article content here...</p>" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }} />
+            <label className="form-label">Content</label>
+            <div ref={editorRef} />
+            {!editorReady && <textarea className="form-control" rows="20" value={form.content} onChange={e => setForm({...form, content: e.target.value})} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }} />}
           </div>
         </div>
         <div style={{ marginTop: 24 }}>
