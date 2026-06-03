@@ -39,6 +39,15 @@ export async function POST(request) {
   }
 
   process.env.OPENROUTER_API_KEY = apiKey;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'keys.json'), JSON.stringify({ openrouter_api_key: apiKey }, null, 2));
+  } catch (e) {
+    // Vercel: read-only filesystem, env var still set
+  }
   await writeLog('INFO', 'OpenRouter API Key updated by Admin');
 
   return Response.json({ success: true, message: 'OpenRouter API Key saved.' });
