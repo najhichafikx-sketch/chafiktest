@@ -9,7 +9,7 @@ const SLOT_INFO = {
   content_top: 'Above tool results',
   content_bottom: 'Below tool results',
   footer: 'Bottom of every page (728x90)',
-  popup: 'Popup on page load',
+      popup: 'Popup (disabled)',
   in_tool: 'Inside tool interface (320x50)',
   loading_state: 'During tool loading (320x50)',
   mid_result: 'Middle of tool results'
@@ -33,7 +33,7 @@ export default function AdDiagnostics() {
             slots[loc] = { enabled: config.enabled, hasCode: !!config.code, codePreview: config.code ? config.code.substring(0, 80) + '...' : 'MISSING' };
             scripts[loc] = config.code && config.code.includes('<script') ? 'INJECTED' : 'MISSING';
           }
-          const expected = ['header','sidebar','content_top','content_bottom','footer','popup','in_tool','loading_state','mid_result'];
+          const expected = ['header','sidebar','content_top','content_bottom','footer','in_tool','loading_state','mid_result'];
           for (const loc of expected) {
             if (!slots[loc]) slots[loc] = { enabled: false, hasCode: false, codePreview: 'NOT CONFIGURED' };
             if (!scripts[loc]) scripts[loc] = 'NOT CONFIGURED';
@@ -42,10 +42,10 @@ export default function AdDiagnostics() {
           let csp = 'OK (no CSP meta found)';
           if (cspMeta) {
             const c = cspMeta.getAttribute('content');
-            if (c.includes('highperformanceformat.com') || c.includes('effectivecpmnetwork.com')) csp = 'Adsterra domains ALLOWED';
+            if (c.includes('effectivecpmnetwork.com')) csp = 'Adsterra domains ALLOWED';
             else csp = 'BLOCKING - missing Adsterra domains';
           }
-          const adElements = document.querySelectorAll('[id*="container-"], [id*="ad-"], iframe[src*="highperformanceformat"], iframe[src*="effectivecpmnetwork"]');
+          const adElements = document.querySelectorAll('[id*="container-"], [id*="ad-"], iframe[src*="effectivecpmnetwork"]');
           setStatus({ slots, scripts, csp, lastRender: new Date().toISOString(), loading: false, error: null, adElementsFound: adElements.length });
         }
       })

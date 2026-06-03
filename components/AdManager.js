@@ -4,6 +4,8 @@ import { useEffect, useRef, useCallback } from 'react';
 
 const RETRY_DELAYS = [500, 2000, 5000];
 
+const globalScripts = typeof window !== 'undefined' && (window.__adLoadedScripts__ || (window.__adLoadedScripts__ = new Set()));
+
 export default function AdManager({ location, toolId }) {
   const ref = useRef(null);
   const timerRef = useRef(null);
@@ -13,24 +15,27 @@ export default function AdManager({ location, toolId }) {
   const injectAd = useCallback((code) => {
     if (!ref.current) return;
 
-    // clean up any previously injected scripts
     scriptsRef.current.forEach(s => { try { document.body.removeChild(s); } catch {} });
     scriptsRef.current = [];
 
-    // extract HTML (non-script content)
     const htmlPart = code.replace(/<script[\s\S]*?<\/script>/gi, '');
     const scriptMatches = code.match(/<script[\s\S]*?<\/script>/gi) || [];
 
-    // set HTML container content
     if (htmlPart.trim()) {
-      ref.current.innerHTML = htmlPart;
+      ref.current.insertAdjacentHTML('beforeend', htmlPart);
     }
 
-    // attach scripts to document.body in order
     scriptMatches.forEach((tag) => {
       const srcMatch = tag.match(/src\s*=\s*"([^"]+)"/);
       const isAsync = /async/gi.test(tag);
       const hasCfasync = /data-cfasync\s*=\s*"false"/gi.test(tag);
+
+      if (srcMatch) {
+        const src = srcMatch[1];
+        if (globalScripts.has(src)) return;
+        globalScripts.add(src);
+      }
+
       const script = document.createElement('script');
 
       if (srcMatch) {
@@ -41,13 +46,8 @@ export default function AdManager({ location, toolId }) {
         script.textContent = raw;
       }
 
-      // preserve data-cfasync="false" to prevent CloudFlare Rocket Loader deferral
       if (hasCfasync) script.setAttribute('data-cfasync', 'false');
       script.setAttribute('data-admanager', location);
-
-      script.onerror = () => {
-        // script failed to load, will be retried
-      };
 
       document.body.appendChild(script);
       scriptsRef.current.push(script);
@@ -76,7 +76,6 @@ export default function AdManager({ location, toolId }) {
 
     loadAd();
 
-    // sequential retries
     let attempt = 0;
     function nextRetry() {
       if (!mountedRef.current) return;
@@ -93,7 +92,6 @@ export default function AdManager({ location, toolId }) {
     return () => {
       mountedRef.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
-      // clean up injected scripts on unmount
       scriptsRef.current.forEach(s => { try { document.body.removeChild(s); } catch {} });
       scriptsRef.current = [];
     };
