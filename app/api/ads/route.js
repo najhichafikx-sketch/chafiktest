@@ -1,27 +1,36 @@
 import { getAdSettings } from '@/lib/db';
 
-const FALLBACK_ADS = {
-  header: { location: 'header', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  sidebar: { location: 'sidebar', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  content_top: { location: 'content_top', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  content_bottom: { location: 'content_bottom', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  footer: { location: 'footer', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  in_tool: { location: 'in_tool', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  loading_state: { location: 'loading_state', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  mid_result: { location: 'mid_result', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` }
+function stripScripts(code) {
+  return (code || '').replace(/<script[\s\S]*?<\/script>/gi, '').trim();
+}
+
+const FALLBACKS = {
+  header: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:90px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Header Ad</div>',
+  sidebar: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;min-height:250px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Sidebar Ad</div>',
+  content_top: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Content Ad</div>',
+  content_bottom: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Content Footer Ad</div>',
+  footer: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:90px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Footer Ad</div>',
+  in_tool: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:60px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">In-Tool Ad</div>',
+  loading_state: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:60px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Loading Ad</div>',
+  mid_result: '<div style="background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600">Mid-Result Ad</div>',
 };
 
-export async function GET() {
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const location = searchParams.get('location');
+
   try {
     const dbAds = await getAdSettings();
     if (dbAds && dbAds.length > 0) {
-      const ads = {};
       for (const a of dbAds) {
-        if (a.enabled && a.code) ads[a.location] = { location: a.location, enabled: true, code: a.code };
+        if (a.location === location && a.enabled && a.code) {
+          const html = stripScripts(a.code);
+          if (html) return Response.json({ success: true, html });
+        }
       }
-      return Response.json({ success: true, ads });
     }
   } catch {}
 
-  return Response.json({ success: true, ads: FALLBACK_ADS });
+  const fallback = FALLBACKS[location] || FALLBACKS.content_top;
+  return Response.json({ success: true, html: fallback });
 }

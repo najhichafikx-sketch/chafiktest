@@ -6,16 +6,10 @@ const limiter = rateLimitMiddleware({ max: 30 });
 
 const DEFAULT_AD_LOCATIONS = ['header', 'sidebar', 'content_top', 'content_bottom', 'footer', 'in_tool', 'loading_state', 'mid_result'];
 
-const FALLBACK_ADS = {
-  header: { location: 'header', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  sidebar: { location: 'sidebar', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  content_top: { location: 'content_top', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  content_bottom: { location: 'content_bottom', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  footer: { location: 'footer', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  in_tool: { location: 'in_tool', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  loading_state: { location: 'loading_state', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` },
-  mid_result: { location: 'mid_result', enabled: true, code: `<script async="async" data-cfasync="false" src="https://pl29606011.effectivecpmnetwork.com/c31d4601494437332d755db50ae828b0/invoke.js"></script><div id="container-c31d4601494437332d755db50ae828b0"></div>` }
-};
+const FALLBACK_ADS = {};
+DEFAULT_AD_LOCATIONS.forEach(loc => {
+  FALLBACK_ADS[loc] = { location: loc, enabled: true, code: '' };
+});
 
 export async function GET(request) {
   if (!verifyAdmin(request)) {
@@ -31,16 +25,12 @@ export async function GET(request) {
       }
     }
 
-    const ads = DEFAULT_AD_LOCATIONS.map(loc => {
-      const saved = settingsMap[loc];
-      const fallback = FALLBACK_ADS[loc];
-      return {
-        id: saved?.id || null,
-        location: loc,
-        enabled: saved?.enabled ?? fallback?.enabled ?? true,
-        code: saved?.code || fallback?.code || ''
-      };
-    });
+    const ads = DEFAULT_AD_LOCATIONS.map(loc => ({
+      id: settingsMap[loc]?.id || null,
+      location: loc,
+      enabled: settingsMap[loc]?.enabled ?? true,
+      code: settingsMap[loc]?.code || ''
+    }));
 
     return Response.json({ success: true, ads });
   } catch {
