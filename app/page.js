@@ -30,7 +30,7 @@ function HeroSection() {
       <div className="container hero-content">
         <div className="hero-badge">
           <span className="dot"></span>
-          ✨ Powered by Advanced AI
+          ✨ Powered by Advanced AI • 🚀 v1.0
         </div>
         <h1 className="hero-title">
           Create Stunning Content with <span className="highlight">AI Superpowers</span>
