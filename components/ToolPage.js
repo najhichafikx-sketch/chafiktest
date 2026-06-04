@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import AdSlot from '@/components/AdSlot';
 import { TOOL_ARTICLES, RELATED_TOOLS, USAGE_GUIDES, FAQS, TOOL_NAMES } from '@/lib/tool-content';
 
 function trackToolUsage(toolId) {
@@ -112,12 +111,8 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
           <p className="tool-page-desc">{description}</p>
         </div>
 
-        <AdSlot location="content_top" />
-
         <div className="tool-layout" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <div className="tool-workspace" style={{ flex: 1, minWidth: 0 }}>
-
-            <AdSlot location="in_tool" />
 
             {usageGuide && (
               <div className="tool-section">
@@ -173,7 +168,6 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
                     <p>AI is generating your content...</p>
                   </div>
                 </div>
-                <AdSlot location="loading_state" />
               </>
             )}
 
@@ -196,8 +190,6 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
 
                   <div className="results-content-inner" style={{ padding: 'var(--space-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginTop: 'var(--space-md)' }}
                     dangerouslySetInnerHTML={{ __html: result }} />
-
-                  <AdSlot location="mid_result" />
 
                   <div className="results-content-inner" style={{ padding: 'var(--space-md)', marginTop: 'var(--space-md)' }}
                     dangerouslySetInnerHTML={{ __html: result }} />
@@ -252,13 +244,10 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
           {showSidebar && (
             <aside className="tool-sidebar" style={{ width: 300, flexShrink: 0 }}>
               <div style={{ position: 'sticky', top: 100 }}>
-                <AdSlot location="sidebar" />
               </div>
             </aside>
           )}
         </div>
-
-        <AdSlot location="content_bottom" />
       </div>
     </section>
   );

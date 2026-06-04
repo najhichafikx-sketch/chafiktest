@@ -54,13 +54,11 @@ export default function AdminPage() {
 
   const navCards = [
     { icon: Wrench, label: 'Tools', desc: 'Manage AI tools and configurations', href: '/admin/tools', color: '#8b5cf6' },
-    { icon: Megaphone, label: 'Ads', desc: 'Ad units & Adsterra management', href: '/admin/ads', color: '#f59e0b' },
     { icon: DollarSign, label: 'Revenue', desc: 'Revenue statistics and reports', href: '/admin/revenue-dashboard', color: '#10b981' },
     { icon: BarChart3, label: 'Analytics', desc: 'Traffic and engagement metrics', href: '/admin/analytics', color: '#3b82f6' },
     { icon: Settings, label: 'Settings', desc: 'General site configuration', href: '/admin/settings', color: '#6b7280' },
     { icon: Key, label: 'API Keys', desc: 'Manage API credentials', href: '/admin/api-settings', color: '#ec4899' },
     { icon: Globe, label: 'Platforms', desc: 'Connected platform management', href: '/admin/platforms-views', color: '#14b8a6' },
-    { icon: SearchX, label: 'Ad Diagnostics', desc: 'Diagnose ad display issues', href: '/admin/ad-diagnostics', color: '#f97316' },
     { icon: FileText, label: 'Content', desc: 'Content management overview', href: '/admin/blog', color: '#a855f7' },
     { icon: Newspaper, label: 'Blog Articles', desc: 'Write and manage blog posts', href: '/admin/blog', color: '#2563eb' },
     { icon: MessageSquare, label: 'Prompt Articles', desc: 'Create and manage prompts', href: '/admin/prompts', color: '#06b6d4' },

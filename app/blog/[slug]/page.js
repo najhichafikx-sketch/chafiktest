@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import AdSlot from '@/components/AdSlot';
 import { TOOL_NAMES, TOOL_ARTICLES } from '@/lib/tool-content';
 import { YOUTUBE_BLOG_POSTS } from '@/lib/blog-content';
 import { SEED_POSTS } from '@/lib/seed-blog';
@@ -97,8 +96,6 @@ export default async function BlogArticle({ params }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: 16 }}>{post.excerpt}</p>
           </div>
 
-          <AdSlot location="content_top" />
-
           {content ? (
             <div className="blog-article-content" style={{ lineHeight: 1.8, fontSize: '1rem', color: 'var(--text-secondary)' }}
               dangerouslySetInnerHTML={{ __html: content }} />
@@ -117,8 +114,6 @@ export default async function BlogArticle({ params }) {
               </a>
             </div>
           )}
-
-          <AdSlot location="content_bottom" />
 
           <div style={{ marginTop: 48 }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: 24 }}>Related Articles</h2>

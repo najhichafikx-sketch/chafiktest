@@ -4,21 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Wrench, Megaphone, DollarSign, BarChart3,
-  Settings, Key, Globe, SearchX, Newspaper, MessageSquare,
+  LayoutDashboard, Wrench, DollarSign, BarChart3,
+  Settings, Key, Globe, Newspaper, MessageSquare,
   Users, LogOut
 } from 'lucide-react';
 
 const links = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/tools', label: 'Tools', icon: Wrench },
-  { href: '/admin/ads', label: 'Ads', icon: Megaphone },
   { href: '/admin/revenue-dashboard', label: 'Revenue', icon: DollarSign },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
   { href: '/admin/api-settings', label: 'API Keys', icon: Key },
   { href: '/admin/platforms-views', label: 'Platforms', icon: Globe },
-  { href: '/admin/ad-diagnostics', label: 'Ad Diag', icon: SearchX },
   { type: 'divider' },
   { type: 'label', label: 'Content' },
   { href: '/admin/blog', label: 'Blog Articles', icon: Newspaper },

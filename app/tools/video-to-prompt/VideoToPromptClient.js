@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import AdSlot from '@/components/AdSlot';
 
 export default function VideoToPromptClient() {
   const [file, setFile] = useState(null);
@@ -175,11 +174,8 @@ export default function VideoToPromptClient() {
           <p className="tool-page-desc">Upload any video and get detailed AI prompts for image generators, video creators, and more.</p>
         </div>
 
-        <AdSlot location="content_top" />
-
         <div className="tool-layout" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <div className="tool-workspace" style={{ flex: 1, minWidth: 0 }}>
-            <AdSlot location="in_tool" />
 
             <div className="tool-section">
               <h2>How to Use Video to Prompt</h2>
@@ -261,7 +257,6 @@ export default function VideoToPromptClient() {
                   <PromptSection title="🎥 Video Generation Prompt" content={result.videoGenPrompt} />
                 </div>
 
-                <AdSlot location="mid_result" />
               </div>
             )}
 
@@ -345,12 +340,10 @@ export default function VideoToPromptClient() {
 
           <aside className="tool-sidebar" style={{ width: 300, flexShrink: 0 }}>
             <div style={{ position: 'sticky', top: 100 }}>
-              <AdSlot location="sidebar" />
             </div>
           </aside>
         </div>
 
-        <AdSlot location="content_bottom" />
       </div>
     </section>
   );
