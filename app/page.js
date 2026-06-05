@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import AdsterraBanner from '@/components/AdsterraBanner';
 
 export default function HomePage() {
   useEffect(() => {
@@ -43,7 +42,6 @@ function HeroSection() {
           <Link href="/register" className="btn btn-primary btn-lg">Get Started Free</Link>
           <a href="#tools" className="btn btn-secondary btn-lg">Watch Demo</a>
         </div>
-        <AdsterraBanner />
         <div className="hero-stats">
           <div className="hero-stat">
             <div className="hero-stat-value" data-count="50000">0</div>

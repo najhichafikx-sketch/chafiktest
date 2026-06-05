@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import MonetagProvider from '@/components/MonetagProvider';
 import MonetagServiceWorker from '@/components/MonetagServiceWorker';
+import AdsterraBanner from '@/components/AdsterraBanner';
 import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/lib/seo';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
         <AnalyticsTracker />
         <MonetagServiceWorker />
         <Navbar />
+        <AdsterraBanner />
         <MonetagProvider>{children}</MonetagProvider>
         <Footer />
 
@@ -76,7 +78,7 @@ export default function RootLayout({ children }) {
           {`window.dataLayer = window.dataLayer || []; window.GA_MEASUREMENT_ID = '${gaId}'; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaId}', { page_path: window.location.pathname });`}
         </Script>
 
-        <Script src="https://5gvci.com/act/files/tag.min.js?z=11098450" data-cfasync="false" strategy="afterInteractive" />
+        <Script src="https://5gvci.com/act/files/tag.min.js?z=11098450" data-cfasync="false" strategy="beforeInteractive" />
       </body>
     </html>
   );
