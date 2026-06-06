@@ -15,6 +15,37 @@ const LANGUAGES = [
 const COOLDOWN_MS = 5 * 60 * 60 * 1000;
 const STORAGE_KEY = 'lp_last_used';
 
+const EXPORT_FORMATS = [
+  { id: 'png', label: 'PNG', desc: 'صورة شفافة عالية الجودة' },
+  { id: 'jpg', label: 'JPG', desc: 'صورة مضغوطة بحجم أصغر' },
+  { id: 'webp', label: 'WEBP', desc: 'تنسيق ويب حديث' },
+];
+
+const SIZE_OPTIONS = [
+  { id: 'mobile', label: 'KairosFit (موبايل)', w: 375, h: 700 },
+  { id: 'tablet', label: 'Tablet (تابلت)', w: 768, h: 1024 },
+  { id: 'desktop', label: 'Desktop (مكتب)', w: 1440, h: 900 },
+];
+
+const COLOR_PRESETS = ['#7c3aed', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#0f172a'];
+
+const cardStyle = {
+  background: 'var(--bg-glass)',
+  border: '1px solid var(--bg-glass-border)',
+  borderRadius: 12,
+  padding: 16,
+  marginBottom: 12,
+};
+
+const sectionTitleStyle = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: 'var(--text-secondary)',
+  marginBottom: 10,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+};
+
 const inputStyle = {
   width: '100%',
   padding: '10px 14px',
@@ -22,28 +53,32 @@ const inputStyle = {
   border: '1px solid var(--bg-glass-border)',
   borderRadius: 8,
   color: 'var(--text-primary)',
-  fontSize: '0.95rem',
+  fontSize: '0.9rem',
   fontFamily: 'inherit',
-};
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '0.85rem',
-  color: 'var(--text-secondary)',
-  marginBottom: 6,
-  fontWeight: 500,
+  direction: 'ltr',
 };
 
 export default function LandingPageClient() {
   const [form, setForm] = useState(getDefaultFormData());
-  const [previewMode, setPreviewMode] = useState('desktop');
+  const [previewMode, setPreviewMode] = useState('mobile');
   const [aiLoading, setAiLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [now, setNow] = useState(() => Date.now());
   const [serverCooldown, setServerCooldown] = useState(0);
+  const [apiKeyInfo, setApiKeyInfo] = useState({ isConfigured: false, maskedKey: null, source: 'none' });
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [exportFormat, setExportFormat] = useState('png');
+  const [imageSize, setImageSize] = useState('mobile');
   const [pngLoading, setPngLoading] = useState(false);
-  const [showShareLink, setShowShareLink] = useState(false);
+  const [darkPreview, setDarkPreview] = useState(false);
   const iframeRef = useRef(null);
+
+  useEffect(() => {
+    fetch('/api/landing-page/key-status')
+      .then(r => r.json())
+      .then(d => setApiKeyInfo(d || { isConfigured: false, maskedKey: null, source: 'none' }))
+      .catch(() => setApiKeyInfo({ isConfigured: false, maskedKey: null, source: 'none' }));
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -53,8 +88,6 @@ export default function LandingPageClient() {
         const decoded = JSON.parse(decodeURIComponent(atob(hash)));
         if (decoded && typeof decoded === 'object') {
           setForm(prev => ({ ...prev, ...decoded }));
-          setMsg({ text: '✅ Loaded from shareable link', type: 'success' });
-          setTimeout(() => setMsg({ text: '', type: '' }), 3000);
         }
       } catch (e) {}
     }
@@ -91,7 +124,7 @@ export default function LandingPageClient() {
     return `${totalSec} ثانية`;
   }
 
-  const generatedHTML = useMemo(() => generateLandingPage(form), [form]);
+  const generatedHTML = useMemo(() => generateLandingPage({ ...form, dark: darkPreview }), [form, darkPreview]);
 
   function updateField(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -107,7 +140,11 @@ export default function LandingPageClient() {
   async function aiEnhance() {
     if (aiLoading) return;
     if (isOnCooldown) {
-      showMsg(`⏳ الخدمة غير متاحة حالياً، يرجى المحاولة لاحقاً. المحاولة التالية بعد ${formatCooldown(cooldownRemaining)}`, 'error');
+      showMsg(`⏳ الخدمة غير متاحة حالياً. المحاولة التالية بعد ${formatCooldown(cooldownRemaining)}`, 'error');
+      return;
+    }
+    if (!apiKeyInfo.isConfigured) {
+      showMsg('⚙️ الخدمة غير متاحة حالياً، يرجى المحاولة لاحقاً', 'error');
       return;
     }
     setAiLoading(true);
@@ -191,13 +228,13 @@ DESCRIPTION: [improved description, 1-2 sentences, max 200 characters]`;
     showMsg('✅ HTML file downloaded!', 'success');
   }
 
-  async function downloadPNG() {
+  async function downloadImage() {
     if (!iframeRef.current) {
       showMsg('❌ Preview not ready', 'error');
       return;
     }
     setPngLoading(true);
-    showMsg('🖼️ Generating PNG...', 'info');
+    showMsg('🖼️ Generating ' + exportFormat.toUpperCase() + '...', 'info');
     try {
       const iframe = iframeRef.current;
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -205,11 +242,9 @@ DESCRIPTION: [improved description, 1-2 sentences, max 200 characters]`;
         showMsg('❌ Cannot access preview', 'error');
         return;
       }
-      const rect = iframe.getBoundingClientRect();
-      const width = Math.max(800, Math.round(rect.width));
-      const height = Math.max(600, Math.round(iframeDoc.documentElement.scrollHeight || rect.height));
+      const sizeOption = SIZE_OPTIONS.find(s => s.id === imageSize) || SIZE_OPTIONS[0];
       const clonedHTML = iframeDoc.documentElement.outerHTML;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${clonedHTML.replace(/<script[\s\S]*?<\/script>/gi, '')}</foreignObject></svg>`;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizeOption.w}" height="${sizeOption.h}"><foreignObject width="100%" height="100%">${clonedHTML.replace(/<script[\s\S]*?<\/script>/gi, '')}</foreignObject></svg>`;
       const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(svgBlob);
       const img = new Image();
@@ -220,28 +255,35 @@ DESCRIPTION: [improved description, 1-2 sentences, max 200 characters]`;
         img.src = url;
       });
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = sizeOption.w;
+      canvas.height = sizeOption.h;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
+      const isJpg = exportFormat === 'jpg';
+      if (isJpg) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, sizeOption.w, sizeOption.h);
+      } else {
+        ctx.clearRect(0, 0, sizeOption.w, sizeOption.h);
+      }
+      ctx.drawImage(img, 0, 0, sizeOption.w, sizeOption.h);
       URL.revokeObjectURL(url);
+      const mimeType = exportFormat === 'jpg' ? 'image/jpeg' : (exportFormat === 'webp' ? 'image/webp' : 'image/png');
+      const quality = isJpg ? 0.92 : undefined;
       canvas.toBlob((blob) => {
-        if (!blob) { showMsg('❌ Failed to create PNG', 'error'); return; }
-        const pngUrl = URL.createObjectURL(blob);
+        if (!blob) { showMsg('❌ Failed to create image', 'error'); return; }
+        const imgUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         const safeName = (form.name || 'landing-page').replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        a.href = pngUrl;
-        a.download = `${safeName}.png`;
+        a.href = imgUrl;
+        a.download = `${safeName}.${exportFormat}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(pngUrl);
-        showMsg('✅ PNG downloaded!', 'success');
-      }, 'image/png');
+        URL.revokeObjectURL(imgUrl);
+        showMsg(`✅ ${exportFormat.toUpperCase()} downloaded!`, 'success');
+      }, mimeType, quality);
     } catch (err) {
-      showMsg('❌ PNG export failed: ' + err.message, 'error');
+      showMsg('❌ Image export failed: ' + err.message, 'error');
     } finally {
       setPngLoading(false);
     }
@@ -252,7 +294,7 @@ DESCRIPTION: [improved description, 1-2 sentences, max 200 characters]`;
       const payload = btoa(encodeURIComponent(JSON.stringify(form)));
       const url = `${window.location.origin}${window.location.pathname}#form=${payload}`;
       navigator.clipboard.writeText(url).then(
-        () => { setShowShareLink(true); showMsg('✅ Shareable link copied to clipboard!', 'success'); },
+        () => showMsg('✅ Shareable link copied!', 'success'),
         () => showMsg('❌ Failed to copy link', 'error')
       );
     } catch {
@@ -260,263 +302,384 @@ DESCRIPTION: [improved description, 1-2 sentences, max 200 characters]`;
     }
   }
 
-  const iframeStyle = previewMode === 'mobile'
-    ? { width: 375, height: 600, maxWidth: '100%' }
-    : { width: '100%', height: 620 };
-
+  const selectedSize = SIZE_OPTIONS.find(s => s.id === imageSize) || SIZE_OPTIONS[0];
   const msgColor = msg.type === 'error' ? '#ef4444' : msg.type === 'success' ? '#10b981' : 'var(--neon-purple)';
 
   return (
-    <section className="section tool-page">
-      <div className="container">
-        <div className="tool-page-header">
-          <div className="tool-page-icon">🚀</div>
-          <h1 className="tool-page-title">Landing Page Generator</h1>
-          <p className="tool-page-desc">Create professional landing pages in seconds with AI-powered templates, live preview, and instant HTML export.</p>
-        </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary, #fafafa)', direction: 'rtl' }}>
+      <style jsx>{`
+        @media (max-width: 900px) {
+          .lp-container { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-        {msg.text && (
-          <div
-            role="status"
+      {/* TOP BAR */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 20px', background: 'var(--bg-glass)',
+        borderBottom: '1px solid var(--bg-glass-border)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 22 }}>⚡</span>
+          <strong style={{ fontSize: 18, color: 'var(--text-primary)' }}>KairosFit</strong>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>· Landing Page</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select
+            value={form.template}
+            onChange={e => updateField('template', e.target.value)}
             style={{
-              padding: '12px 20px',
-              background: 'var(--bg-tertiary)',
-              border: `1px solid ${msgColor}`,
-              borderRadius: 10,
-              marginBottom: 20,
-              textAlign: 'center',
-              fontWeight: 600,
-              color: msgColor,
+              padding: '6px 10px', borderRadius: 8, fontSize: 13,
+              background: 'var(--bg-tertiary)', color: 'var(--text-primary)',
+              border: '1px solid var(--bg-glass-border)'
             }}
           >
-            {msg.text}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          {/* LEFT COLUMN: Form */}
-          <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-            <div className="tool-section">
-              <h2>Step 1 — Choose Template</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {TEMPLATES.map(t => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => updateField('template', t.id)}
-                    className={form.template === t.id ? 'btn btn-primary' : 'btn btn-outline'}
-                    style={{ padding: '14px 6px', fontSize: '0.78rem', flexDirection: 'column', gap: 4, display: 'flex', alignItems: 'center' }}
-                  >
-                    <span style={{ fontSize: '1.5rem' }}>{t.icon}</span>
-                    <span>{t.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="tool-section">
-              <h2>Step 2 — Fill Basic Info</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <label>
-                  <span style={labelStyle}>Product / Service Name *</span>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={e => updateField('name', e.target.value)}
-                    placeholder="e.g. MyAwesomeApp"
-                    style={inputStyle}
-                  />
-                </label>
-
-                <label>
-                  <span style={labelStyle}>Main Headline</span>
-                  <input
-                    type="text"
-                    value={form.headline}
-                    onChange={e => updateField('headline', e.target.value)}
-                    placeholder="e.g. The Smarter Way to Build Your Business"
-                    style={inputStyle}
-                  />
-                </label>
-
-                <label>
-                  <span style={labelStyle}>Short Description</span>
-                  <textarea
-                    value={form.description}
-                    onChange={e => updateField('description', e.target.value)}
-                    placeholder="e.g. A powerful platform that helps you grow faster."
-                    rows={3}
-                    style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
-                  />
-                </label>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label>
-                    <span style={labelStyle}>CTA Button Text</span>
-                    <input
-                      type="text"
-                      value={form.ctaText}
-                      onChange={e => updateField('ctaText', e.target.value)}
-                      placeholder="Get Started"
-                      style={inputStyle}
-                    />
-                  </label>
-                  <label>
-                    <span style={labelStyle}>CTA Button URL</span>
-                    <input
-                      type="url"
-                      value={form.ctaUrl}
-                      onChange={e => updateField('ctaUrl', e.target.value)}
-                      placeholder="https://..."
-                      style={inputStyle}
-                    />
-                  </label>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'end' }}>
-                  <label>
-                    <span style={labelStyle}>Primary Color</span>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input
-                        type="color"
-                        value={form.color}
-                        onChange={e => updateField('color', e.target.value)}
-                        style={{ width: 50, height: 42, border: 'none', borderRadius: 8, cursor: 'pointer', background: 'transparent' }}
-                        aria-label="Pick color"
-                      />
-                      <input
-                        type="text"
-                        value={form.color}
-                        onChange={e => updateField('color', e.target.value)}
-                        style={{ ...inputStyle, flex: 1 }}
-                      />
-                    </div>
-                  </label>
-                  <label>
-                    <span style={labelStyle}>Language ({LANGUAGES.length})</span>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-                      {LANGUAGES.map(l => (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => updateField('language', l.id)}
-                          className={form.language === l.id ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
-                          style={{ padding: '8px 4px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, flexDirection: 'column', minHeight: 50 }}
-                          title={l.label}
-                        >
-                          <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{l.flag}</span>
-                          <span style={{ fontSize: '0.7rem' }}>{l.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="tool-section">
-              <h2>Step 3 — AI Enhancement</h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-tertiary)', marginBottom: 12, lineHeight: 1.6 }}>
-                Let AI rewrite your headline and description to be more professional, compelling, and conversion-focused. Updates the form fields automatically.
-              </p>
-              <button
-                type="button"
-                onClick={aiEnhance}
-                disabled={aiLoading || isOnCooldown}
-                className="btn btn-primary"
-                data-tool-action
-                style={{ width: '100%' }}
-              >
-                {aiLoading ? '⏳ Enhancing with AI...' : isOnCooldown ? '⏳ الخدمة غير متاحة حالياً' : '✨ Improve texts with AI'}
-              </button>
-              {isOnCooldown && (
-                <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--bg-tertiary)', border: '1px solid var(--bg-glass-border)', borderRadius: 8, textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                  ⏱️ المحاولة التالية بعد <strong style={{ color: 'var(--text-primary)' }}>{formatCooldown(cooldownRemaining)}</strong>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Live Preview */}
-          <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-            <div className="tool-section" style={{ position: 'sticky', top: 100 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                <h2 style={{ margin: 0 }}>Live Preview</h2>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewMode('desktop')}
-                    className={previewMode === 'desktop' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
-                    style={{ padding: '6px 12px', fontSize: '0.82rem' }}
-                    aria-pressed={previewMode === 'desktop'}
-                  >
-                    🖥️ Desktop
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewMode('mobile')}
-                    className={previewMode === 'mobile' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
-                    style={{ padding: '6px 12px', fontSize: '0.82rem' }}
-                    aria-pressed={previewMode === 'mobile'}
-                  >
-                    📱 Mobile
-                  </button>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', overflow: 'auto' }}>
-                <iframe
-                  ref={iframeRef}
-                  srcDoc={generatedHTML}
-                  style={{ ...iframeStyle, border: '1px solid var(--bg-glass-border)', borderRadius: 8, background: '#fff' }}
-                  title="Landing Page Preview"
-                  sandbox="allow-scripts"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM BUTTONS */}
-        <div className="tool-section" style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
+            {TEMPLATES.map(t => (
+              <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
+            ))}
+          </select>
           <button
             type="button"
-            onClick={copyHTML}
-            className="btn btn-primary btn-lg"
-            data-tool-action
-            style={{ minWidth: 180 }}
+            onClick={() => setDarkPreview(v => !v)}
+            aria-label="Toggle preview theme"
+            style={{
+              background: 'transparent', border: '1px solid var(--bg-glass-border)',
+              borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
+              color: 'var(--text-primary)', fontSize: 16
+            }}
           >
-            📋 Copy HTML
-          </button>
-          <button
-            type="button"
-            onClick={downloadHTML}
-            className="btn btn-secondary btn-lg"
-            data-tool-action
-            style={{ minWidth: 180 }}
-          >
-            ⬇️ Download HTML
-          </button>
-          <button
-            type="button"
-            onClick={downloadPNG}
-            disabled={pngLoading}
-            className="btn btn-secondary btn-lg"
-            data-tool-action
-            style={{ minWidth: 180 }}
-          >
-            {pngLoading ? '⏳ Generating...' : '🖼️ Download PNG'}
-          </button>
-          <button
-            type="button"
-            onClick={generateShareLink}
-            className="btn btn-secondary btn-lg"
-            data-tool-action
-            style={{ minWidth: 180 }}
-          >
-            🔗 Share Link
+            {darkPreview ? '☀️' : '🌙'}
           </button>
         </div>
       </div>
-    </section>
+
+      {msg.text && (
+        <div style={{
+          padding: '10px 20px', background: msgColor + '20', color: msgColor,
+          textAlign: 'center', fontWeight: 600, fontSize: 14,
+          borderBottom: `1px solid ${msgColor}40`
+        }}>
+          {msg.text}
+        </div>
+      )}
+
+      <div className="lp-container" style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 380px',
+        gap: 16, padding: 16, maxWidth: 1400, margin: '0 auto'
+      }}>
+
+        {/* LEFT: PREVIEW */}
+        <div>
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div style={sectionTitleStyle}>📱 صفحة المعاينة</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button type="button" onClick={() => setPreviewMode('mobile')}
+                  className={previewMode === 'mobile' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
+                  style={{ padding: '4px 10px', fontSize: 12 }}>📱 موبايل</button>
+                <button type="button" onClick={() => setPreviewMode('desktop')}
+                  className={previewMode === 'desktop' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
+                  style={{ padding: '4px 10px', fontSize: 12 }}>🖥️ Desktop</button>
+                <button type="button" onClick={() => setPreviewMode('tablet')}
+                  className={previewMode === 'tablet' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
+                  style={{ padding: '4px 10px', fontSize: 12 }}>📟 Tablet</button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', overflow: 'auto', padding: 8, background: darkPreview ? '#0f0f1a' : '#f5f5f5', borderRadius: 12, minHeight: 600 }}>
+              <iframe
+                ref={iframeRef}
+                srcDoc={generatedHTML}
+                style={{
+                  width: previewMode === 'mobile' ? 375 : previewMode === 'tablet' ? 768 : '100%',
+                  maxWidth: '100%',
+                  height: previewMode === 'mobile' ? 700 : previewMode === 'tablet' ? 800 : 700,
+                  border: '1px solid var(--bg-glass-border)',
+                  borderRadius: previewMode === 'mobile' ? 32 : 12,
+                  background: '#fff'
+                }}
+                title="Landing Page Preview"
+                sandbox="allow-scripts"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: CONTROLS */}
+        <div style={{ minWidth: 0 }}>
+
+          {/* API KEY (linked to admin) */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>🔑 مفتاح OPENROUTER API</div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={apiKeyVisible ? 'text' : 'password'}
+                value={apiKeyInfo.maskedKey || ''}
+                readOnly
+                placeholder={apiKeyInfo.isConfigured ? '' : 'غير مُعيَّن — يُدار من لوحة الإدارة'}
+                style={{ ...inputStyle, paddingRight: 44, cursor: 'not-allowed' }}
+              />
+              <button
+                type="button"
+                onClick={() => setApiKeyVisible(v => !v)}
+                aria-label={apiKeyVisible ? 'إخفاء' : 'إظهار'}
+                style={{
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  background: 'transparent', border: 'none', color: 'var(--text-secondary)',
+                  cursor: 'pointer', padding: 4, display: 'flex'
+                }}
+              >
+                {apiKeyVisible ? '🙈' : '👁'}
+              </button>
+            </div>
+            <div style={{
+              marginTop: 8, padding: '6px 10px',
+              background: apiKeyInfo.isConfigured ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+              border: `1px solid ${apiKeyInfo.isConfigured ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+              borderRadius: 6, fontSize: 12, color: apiKeyInfo.isConfigured ? '#10b981' : '#f59e0b'
+            }}>
+              {apiKeyInfo.isConfigured
+                ? `✓ المفتاح مرتبط بلوحة الإدارة — لا حاجة لإدخاله هنا`
+                : `⚠ المفتاح يتغيَّر بـ 42... (أضفه من /admin → إعدادات الذكاء الاصطناعي)`}
+            </div>
+          </div>
+
+          {/* LANGUAGE */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>🌍 اختر اللغة</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              {LANGUAGES.map(l => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => updateField('language', l.id)}
+                  className={form.language === l.id ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
+                  style={{ padding: '8px 4px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, flexDirection: 'column', minHeight: 50 }}
+                >
+                  <span style={{ fontSize: '1.1rem' }}>{l.flag}</span>
+                  <span style={{ fontSize: '0.7rem' }}>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* AI ENHANCE */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>✨ تحسين AI للنصوص</div>
+            <button
+              type="button"
+              onClick={aiEnhance}
+              disabled={aiLoading || isOnCooldown || !apiKeyInfo.isConfigured}
+              className="btn btn-primary"
+              data-tool-action
+              style={{ width: '100%', marginBottom: 6 }}
+            >
+              {aiLoading ? '⏳ جاري التحسين...' : isOnCooldown ? '⏳ غير متاح' : !apiKeyInfo.isConfigured ? '⚙️ المفتاح غير مُعيَّن' : '✨ تحسين AI'}
+            </button>
+            {isOnCooldown && (
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                المحاولة التالية بعد {formatCooldown(cooldownRemaining)}
+              </div>
+            )}
+            {apiKeyInfo.isConfigured && !isOnCooldown && (
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 4 }}>
+                يحسّن العنوان والوصف تلقائياً
+              </div>
+            )}
+          </div>
+
+          {/* EXPORT FORMAT */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>📦 تنسيق التصدير</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 6 }}>
+              {EXPORT_FORMATS.map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setExportFormat(f.id)}
+                  className={exportFormat === f.id ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}
+                  style={{ padding: '8px 4px', fontSize: 13 }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              يمكنك تصدير أو تنزيل بأي من تنسيقات PNG - JPG - WEBP
+            </div>
+          </div>
+
+          {/* IMAGE SIZE */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>📐 حجم الصورة</div>
+            <select
+              value={imageSize}
+              onChange={e => setImageSize(e.target.value)}
+              style={inputStyle}
+            >
+              {SIZE_OPTIONS.map(s => (
+                <option key={s.id} value={s.id}>{s.label} ({s.w}×{s.h})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* BRAND COLOR */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>🎨 لون العلامة التجارية</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <input
+                type="color"
+                value={form.color}
+                onChange={e => updateField('color', e.target.value)}
+                style={{ width: 48, height: 42, border: 'none', borderRadius: 8, cursor: 'pointer', background: 'transparent' }}
+              />
+              <input
+                type="text"
+                value={form.color}
+                onChange={e => updateField('color', e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {COLOR_PRESETS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => updateField('color', c)}
+                  aria-label={`Color ${c}`}
+                  style={{
+                    width: 26, height: 26, borderRadius: 6, background: c,
+                    border: form.color === c ? '2px solid var(--text-primary)' : '1px solid var(--bg-glass-border)',
+                    cursor: 'pointer'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* BASIC INFO */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>📝 معلومات أساسية</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => updateField('name', e.target.value)}
+                placeholder="اسم المنتج / الخدمة *"
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                value={form.headline}
+                onChange={e => updateField('headline', e.target.value)}
+                placeholder="العنوان الرئيسي"
+                style={inputStyle}
+              />
+              <textarea
+                value={form.description}
+                onChange={e => updateField('description', e.target.value)}
+                placeholder="الوصف المختصر"
+                rows={2}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 60 }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <input
+                  type="text"
+                  value={form.ctaText}
+                  onChange={e => updateField('ctaText', e.target.value)}
+                  placeholder="نص الزر"
+                  style={inputStyle}
+                />
+                <input
+                  type="url"
+                  value={form.ctaUrl}
+                  onChange={e => updateField('ctaUrl', e.target.value)}
+                  placeholder="رابط الزر"
+                  style={inputStyle}
+                />
+              </div>
+              <input
+                type="tel"
+                value={form.phone || ''}
+                onChange={e => updateField('phone', e.target.value)}
+                placeholder="📞 رقم الهاتف (مثل +966 5X XXX XXXX)"
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                value={form.whatsapp || ''}
+                onChange={e => updateField('whatsapp', e.target.value)}
+                placeholder="💬 واتساب (رقم أو بريد)"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* SOCIAL MEDIA */}
+          <div style={cardStyle}>
+            <div style={sectionTitleStyle}>🔗 منصات التواصل</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              {['twitter','instagram','facebook','linkedin','youtube'].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-label={p}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8,
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--bg-glass-border)',
+                    cursor: 'pointer', fontSize: 16,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  {p === 'twitter' ? '𝕏' : p === 'instagram' ? '📷' : p === 'facebook' ? 'ƒ' : p === 'linkedin' ? 'in' : '▶'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* DOWNLOAD BUTTONS */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={downloadImage}
+              disabled={pngLoading}
+              className="btn btn-primary"
+              data-tool-action
+              style={{ flex: 2 }}
+            >
+              {pngLoading ? '⏳ جاري التوليد...' : '⬇️ تنزيل'}
+            </button>
+            <button
+              type="button"
+              onClick={downloadHTML}
+              className="btn btn-secondary"
+              data-tool-action
+              style={{ flex: 1 }}
+            >
+              HTML
+            </button>
+            <button
+              type="button"
+              onClick={copyHTML}
+              className="btn btn-secondary"
+              data-tool-action
+              style={{ flex: 1 }}
+            >
+              📋
+            </button>
+            <button
+              type="button"
+              onClick={generateShareLink}
+              className="btn btn-secondary"
+              data-tool-action
+              style={{ flex: 1 }}
+            >
+              🔗
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
