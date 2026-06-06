@@ -88,7 +88,7 @@ function ToolsSection() {
         </CategorySection>
 
         <CategorySection title="Creator Suites" desc="Complete toolkits for YouTube, TikTok, and digital product creators.">
-          <ToolCard href="/tools/digital-product-creator" icon="💻" name="AI Digital Creator Suite" desc="Create ebooks, courses, templates, and software with AI-guided product development and marketing tools." />
+          <ToolCard href="/tools/ai-digital-creator" icon="🎯" name="AI Digital Creator Suite" desc="Optimize Etsy, KDP, Gumroad products with AI: SEO scores, pricing, marketing copy, cover tips, and platform-specific analysis in seconds." />
           <ToolCard href="/tools/youtube-creator" icon="📺" name="AI YouTube Creator Suite" desc="Complete toolkit for YouTube creators including titles, scripts, hooks, SEO optimization, thumbnails, and viral content ideas." />
           <ToolCard href="/tools/tiktok-tools" icon="🎵" name="AI TikTok Creator Suite" desc="Generate viral scripts, find trending sounds, and optimize hashtags for explosive TikTok growth." />
         </CategorySection>
