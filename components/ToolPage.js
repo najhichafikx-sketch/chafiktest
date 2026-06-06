@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { TOOL_ARTICLES, RELATED_TOOLS, USAGE_GUIDES, FAQS, TOOL_NAMES } from '@/lib/tool-content';
+import { TOOL_ARTICLES, RELATED_TOOLS, USAGE_GUIDES, FAQS, TOOL_NAMES, TOOL_INPUT_HINTS } from '@/lib/tool-content';
 
 function trackToolUsage(toolId) {
   const sid = localStorage.getItem('session_id') || crypto.randomUUID();
@@ -13,7 +13,7 @@ function trackToolUsage(toolId) {
   }).catch(() => {});
 }
 
-export default function ToolPage({ icon, title, description, placeholder, toolId, hasUpload, showSidebar }) {
+export default function ToolPage({ icon, title, description, placeholder, inputHint, toolId, hasUpload, showSidebar }) {
   const [input, setInput] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,6 +147,12 @@ export default function ToolPage({ icon, title, description, placeholder, toolId
                   onChange={e => setInput(e.target.value)}
                   placeholder={placeholder || `Enter your input for ${title}...`}
                 />
+                {inputHint !== false && (inputHint || TOOL_INPUT_HINTS[toolId]) && (
+                  <div className="tool-input-hint">
+                    <span style={{ flexShrink: 0 }}>💡</span>
+                    <span dangerouslySetInnerHTML={{ __html: inputHint || TOOL_INPUT_HINTS[toolId] }} />
+                  </div>
+                )}
                 <div className="tool-examples" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                   <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Try:</span>
                   <button className="btn btn-xs btn-outline" onClick={() => fillExample('Write a blog post about AI marketing trends in 2026')}>AI marketing trends</button>
