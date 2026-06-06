@@ -372,19 +372,19 @@ export default function EditBlogPost() {
             <label style={labelStyle}>Featured Image</label>
             {form.featured_image ? (
               <div>
-                <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '16/9', background: '#f0f2f5', marginBottom: 10 }}>
-                  <img src={form.featured_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', background: '#0f0f1a', marginBottom: 10, padding: 8, minHeight: 120 }}>
+                  <img src={form.featured_image} alt="Featured" style={{ width: '100%', height: 'auto', maxHeight: 400, objectFit: 'contain', display: 'block', borderRadius: 4 }} />
                   <button
                     type="button"
                     onClick={removeImage}
-                    style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <X size={14} />
                   </button>
                 </div>
                 {imageFile && (
                   <div style={{ fontSize: 12, color: 'var(--text-secondary, #666)' }}>
-                    {imageFile.name} ({formatSize(imageFile.size)})
+                    {imageFile.name} ({formatSize(imageFile.size)}) — ✓ عرض كامل بدون قطع
                   </div>
                 )}
               </div>
@@ -395,7 +395,7 @@ export default function EditBlogPost() {
               >
                 <Upload size={28} color="var(--text-tertiary, #bbb)" style={{ marginBottom: 12 }} />
                 <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary, #666)' }}>Upload featured image</p>
-                <p style={{ margin: '0 0 16px', fontSize: 12, color: 'var(--text-tertiary, #999)' }}>PNG, JPG, WEBP up to 5MB</p>
+                <p style={{ margin: '0 0 16px', fontSize: 12, color: 'var(--text-tertiary, #999)' }}>PNG, JPG, WEBP up to 5MB — يُعرض كاملاً بدون قص</p>
                 <span style={{ padding: '8px 20px', borderRadius: 8, background: ACCENT, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                   Choose File
                 </span>

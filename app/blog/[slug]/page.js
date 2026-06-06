@@ -67,11 +67,20 @@ export default async function BlogArticle({ params }) {
   const content = BLOG_CONTENT_MAP[post.slug];
   const relatedPosts = ALL_POSTS.filter(p => p.slug !== post.slug).sort(() => 0.5 - Math.random()).slice(0, 4);
 
+  let dbPost = null;
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/api/blog/${slug}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (data.success && data.post) dbPost = data.post;
+  } catch {}
+  const featuredImage = dbPost?.featured_image || '';
+
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: post.title,
     description: post.excerpt,
+    image: featuredImage || undefined,
     author: { '@type': 'Organization', name: 'Chafiktech Ai' },
     publisher: { '@type': 'Organization', name: 'Chafiktech Ai' },
     datePublished: '2026-01-01',
@@ -95,6 +104,30 @@ export default async function BlogArticle({ params }) {
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: 16 }}>{post.excerpt}</p>
           </div>
+
+          {featuredImage && (
+            <div style={{
+              marginTop: 24,
+              marginBottom: 24,
+              background: '#0f0f1a',
+              borderRadius: 12,
+              padding: 12,
+              border: '1px solid rgba(99,102,241,0.2)'
+            }}>
+              <img
+                src={featuredImage}
+                alt={post.title}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: 600,
+                  objectFit: 'contain',
+                  borderRadius: 8
+                }}
+              />
+            </div>
+          )}
 
           {content ? (
             <div className="blog-article-content" style={{ lineHeight: 1.8, fontSize: '1rem', color: 'var(--text-secondary)' }}
