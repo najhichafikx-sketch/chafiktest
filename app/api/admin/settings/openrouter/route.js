@@ -1,20 +1,45 @@
 import { verifyAdmin } from '@/lib/auth';
-import { writeLog } from '@/lib/db';
+import { writeLog, getSetting, setSetting } from '@/lib/db';
 import { validateApiKey } from '@/lib/sanitize';
 import { rateLimitMiddleware } from '@/lib/rate-limit';
 
 const limiter = rateLimitMiddleware({ max: 20 });
+
+function maskKey(key) {
+  if (!key || typeof key !== 'string' || key.length < 8) return null;
+  return 'sk-or-v1-' + '*'.repeat(Math.max(8, key.length - 12)) + key.slice(-4);
+}
+
+async function loadApiKey() {
+  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const file = path.join(process.cwd(), 'data', 'keys.json');
+    if (fs.existsSync(file)) {
+      const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      if (data.openrouter_api_key) return data.openrouter_api_key;
+    }
+  } catch (e) {}
+  try {
+    const dbKey = await getSetting('openrouter_api_key');
+    if (dbKey && typeof dbKey === 'string' && dbKey.trim()) return dbKey.trim();
+  } catch (e) {}
+  return null;
+}
 
 export async function GET(request) {
   if (!verifyAdmin(request)) {
     return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
   }
 
-  const hasKey = !!process.env.OPENROUTER_API_KEY;
+  const apiKey = await loadApiKey();
+  const hasKey = !!apiKey;
+
   return Response.json({
     success: true,
     isConfigured: hasKey,
-    maskedKey: hasKey ? 'sk-or-v1-' + '*'.repeat(16) + process.env.OPENROUTER_API_KEY.slice(-4) : null,
+    maskedKey: hasKey ? maskKey(apiKey) : null,
     usageCount: 0,
     status: hasKey ? 'active' : 'inactive'
   });
@@ -39,6 +64,7 @@ export async function POST(request) {
   }
 
   process.env.OPENROUTER_API_KEY = apiKey;
+
   try {
     const fs = require('fs');
     const path = require('path');
@@ -46,8 +72,18 @@ export async function POST(request) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'keys.json'), JSON.stringify({ openrouter_api_key: apiKey }, null, 2));
   } catch (e) {
-    // Vercel: read-only filesystem, env var still set
+    // Vercel has read-only filesystem; DB write below handles persistence
   }
+
+  try {
+    await setSetting('openrouter_api_key', apiKey);
+  } catch (e) {
+    return Response.json({
+      success: false,
+      message: 'Failed to persist API key to database. Make sure DATABASE_URL is configured.'
+    }, { status: 500 });
+  }
+
   await writeLog('INFO', 'OpenRouter API Key updated by Admin');
 
   return Response.json({ success: true, message: 'OpenRouter API Key saved.' });
