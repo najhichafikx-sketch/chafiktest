@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import AdsterraBanner from '@/components/AdsterraBanner';
 
 export default function HomePage() {
   useEffect(() => {
@@ -57,11 +58,12 @@ function HeroSection() {
           </div>
         </div>
       </div>
-    </header>
-  );
-}
+      </header>
+      <AdsterraBanner />
+    );
+  }
 
-function ToolsSection() {
+  function ToolsSection() {
   return (
     <section id="tools" className="section">
       <div className="container">
@@ -214,6 +216,7 @@ function PricingSection() {
         </div>
       </div>
     </section>
+    <AdsterraBanner />
   );
 }
 
@@ -280,6 +283,7 @@ function TestimonialsSection() {
         </div>
       </div>
     </section>
+    <AdsterraBanner />
   );
 }
 
