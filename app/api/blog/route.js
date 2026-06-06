@@ -5,6 +5,7 @@ export async function GET() {
     const posts = await getBlogPosts('published');
     return Response.json({ success: true, posts: posts || [] });
   } catch (err) {
-    return Response.json({ success: false, posts: [], message: 'Failed to load posts' }, { status: 500 });
+    console.error('Public blog GET error:', err);
+    return Response.json({ success: false, posts: [], message: err.message || 'Failed to load posts' }, { status: 500 });
   }
 }

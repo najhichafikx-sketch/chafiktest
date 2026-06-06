@@ -1,5 +1,5 @@
 import { verifyAdmin } from '@/lib/auth';
-import { getBlogPosts, createBlogPost } from '@/lib/db';
+import { getBlogPosts, createBlogPost, getSetting, query } from '@/lib/db';
 
 export async function GET(request) {
   if (!verifyAdmin(request)) {
@@ -7,10 +7,27 @@ export async function GET(request) {
   }
 
   try {
-    const posts = await getBlogPosts('all');
+    let posts = [];
+    if (process.env.DATABASE_URL) {
+      const rows = await query(
+        `SELECT id, slug, title, excerpt, category, status, author, created_at, updated_at, published_at, reading_time
+         FROM blog_posts
+         ORDER BY COALESCE(published_at, updated_at, created_at) DESC NULLS LAST`
+      );
+      posts = rows || [];
+    } else {
+      const fs = require('fs');
+      const path = require('path');
+      const file = path.join(process.cwd(), 'data', 'blog.json');
+      if (fs.existsSync(file)) {
+        const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        posts = Array.isArray(data) ? data : (data.posts || []);
+      }
+    }
     return Response.json({ success: true, posts: posts || [] });
   } catch (err) {
-    return Response.json({ success: false, posts: [] }, { status: 500 });
+    console.error('Admin blog GET error:', err);
+    return Response.json({ success: false, message: err.message || 'Database error', posts: [] }, { status: 500 });
   }
 }
 
