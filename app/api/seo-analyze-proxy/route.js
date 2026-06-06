@@ -33,7 +33,9 @@ export async function POST(request) {
 
     const apiKey = await getApiKey();
     if (!apiKey) {
-      return NextResponse.json({ error: 'OpenRouter API key not configured.' }, { status: 503 });
+      return NextResponse.json({
+        error: 'AI feature not configured yet. Set OPENROUTER_API_KEY in Vercel Environment Variables, or add it via the admin dashboard (/admin/api-settings).'
+      }, { status: 503 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chafiktech.com';
