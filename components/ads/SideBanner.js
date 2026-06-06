@@ -26,7 +26,7 @@ function loadAdsterra(container) {
     const cdn = ADSTERRA_CDNS[idx++];
     const config = document.createElement('script');
     config.type = 'text/javascript';
-    config.text = `window.atOptions={'key':'${ADSTERRA_KEY}','format':'iframe','height':300,'width':160,'params':{}};`;
+    config.text = `window.atOptions={'key':'${ADSTERRA_KEY}','format':'iframe','height':250,'width':300,'params':{}};`;
     const s = document.createElement('script');
     s.type = 'text/javascript';
     s.src = `${cdn}/${ADSTERRA_KEY}/invoke.js`;
@@ -69,7 +69,7 @@ export default function SideBanner({ side = 'left' }) {
 
   if (!visible || dismissed) return null;
 
-  const pos = side === 'left' ? { left: '16px' } : { right: '16px' };
+  const pos = side === 'left' ? { left: '12px' } : { right: '12px' };
 
   return (
     <div
@@ -79,14 +79,7 @@ export default function SideBanner({ side = 'left' }) {
         top: '50%',
         transform: 'translateY(-50%)',
         zIndex: 150,
-        background: 'rgba(10,10,15,0.92)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(99,102,241,0.25)',
-        borderRadius: '14px',
-        padding: '10px 8px 8px',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
-        width: '176px',
+        lineHeight: 0,
       }}
     >
       <button
@@ -99,10 +92,10 @@ export default function SideBanner({ side = 'left' }) {
           position: 'absolute',
           top: '-10px',
           right: '-10px',
-          width: '24px',
-          height: '24px',
+          width: '22px',
+          height: '22px',
           borderRadius: '50%',
-          border: '2px solid rgba(10,10,15,0.9)',
+          border: '2px solid rgba(255,255,255,0.9)',
           background: '#ef4444',
           color: 'white',
           fontSize: '11px',
@@ -113,22 +106,11 @@ export default function SideBanner({ side = 'left' }) {
           fontWeight: 'bold',
           lineHeight: 1,
           padding: 0,
+          zIndex: 2,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
         }}
       >✕</button>
-      <div
-        style={{
-          fontSize: 9,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#94a3b8',
-          fontWeight: 700,
-          textAlign: 'center',
-          marginBottom: 6,
-        }}
-      >
-        Sponsored
-      </div>
-      <div ref={ref} style={{ width: 160, height: 300 }} />
+      <div ref={ref} style={{ width: 300, height: 250, display: 'block' }} />
     </div>
   );
 }
