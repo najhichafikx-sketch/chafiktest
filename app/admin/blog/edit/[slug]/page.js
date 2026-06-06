@@ -132,9 +132,56 @@ export default function EditBlogPost() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setImageFile(file);
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage('Image too large. Max 10MB before compression.');
+      e.target.value = '';
+      return;
+    }
+    setMessage('⏳ Compressing image...');
+    const img = new Image();
     const reader = new FileReader();
-    reader.onload = (ev) => set('featured_image', ev.target.result);
+    reader.onload = (ev) => {
+      img.onload = () => {
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let { width, height } = img;
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        const isPng = file.type === 'image/png';
+        const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85);
+        const base64Length = dataUrl.length - (dataUrl.indexOf(',') + 1);
+        const compressedSize = Math.floor(base64Length * 3 / 4);
+        if (compressedSize > 3 * 1024 * 1024) {
+          const smaller = canvas.toDataURL('image/jpeg', 0.7);
+          set('featured_image', smaller);
+          setImageFile({ name: file.name.replace(/\.\w+$/, '.jpg'), size: Math.floor((smaller.length - (smaller.indexOf(',') + 1)) * 3 / 4) });
+        } else {
+          set('featured_image', dataUrl);
+          setImageFile({ name: file.name, size: compressedSize });
+        }
+        setMessage(`✅ Image ready: ${width}x${height}px (${formatSize(compressedSize)})`);
+        setTimeout(() => setMessage(''), 2500);
+      };
+      img.onerror = () => {
+        setMessage('❌ Failed to load image');
+        e.target.value = '';
+      };
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => {
+      setMessage('❌ Failed to read file');
+      e.target.value = '';
+    };
     reader.readAsDataURL(file);
   };
 
