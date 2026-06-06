@@ -43,8 +43,11 @@ export default function DigitalCreatorClient() {
   }, [imagePreview]);
 
   const readiness = Math.round(
-    (READINESS_FIELDS.reduce((s, f) => s + (({title,description,keywords})[f]?.trim() ? 25 : 0)({title,description,keywords}), 0)) +
-    (price?.trim() ? 15 : 0) +
+    READINESS_FIELDS.reduce((sum, field) => {
+      const values = { title, description, keywords };
+      return sum + (values[field] && values[field].trim() ? 25 : 0);
+    }, 0) +
+    (price && price.trim() ? 15 : 0) +
     (imageBase64 ? 10 : 0)
   );
 
