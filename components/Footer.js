@@ -85,8 +85,15 @@ function QuickToolsSidebar() {
         <span>🧰</span>
         <span className="gfs-text">Quick Tools</span>
       </div>
+      <Link href="/tools/ai-digital-creator" className="gfs-link" style={{ background: 'linear-gradient(135deg, rgba(108,99,255,0.15), rgba(247,37,133,0.15))' }}>
+        <span>🎯</span><span className="gfs-text">AI Digital Creator</span>
+        <span style={{ marginInlineStart: 'auto', background: 'linear-gradient(135deg, #6c63ff, #f72585)', color: '#fff', fontSize: 9, padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>NEW</span>
+      </Link>
       <Link href="/tools/seo-article-generator" className="gfs-link">
         <span>📝</span><span className="gfs-text">SEO Generator</span>
+      </Link>
+      <Link href="/tools/ai-humanizer" className="gfs-link">
+        <span>🧠</span><span className="gfs-text">AI Humanizer</span>
       </Link>
       <Link href="/tools/image-to-prompt" className="gfs-link">
         <span>📸</span><span className="gfs-text">Img to Prompt</span>
@@ -94,26 +101,26 @@ function QuickToolsSidebar() {
       <Link href="/tools/video-to-prompt" className="gfs-link">
         <span>🎥</span><span className="gfs-text">Video to Prompt</span>
       </Link>
-      <Link href="/tools/tiktok-tools" className="gfs-link">
-        <span>🎵</span><span className="gfs-text">TikTok Suite</span>
+      <Link href="/tools/landing-page-generator" className="gfs-link">
+        <span>🌐</span><span className="gfs-text">Landing Page</span>
       </Link>
       <Link href="/tools/prompt-viral" className="gfs-link">
         <span>🚀</span><span className="gfs-text">Prompt Viral</span>
       </Link>
-      <Link href="/ecommerce" className="gfs-link">
-        <span>🛒</span><span className="gfs-text">Digital Product</span>
+      <Link href="/tools/sales-copy-generator" className="gfs-link">
+        <span>💼</span><span className="gfs-text">Sales Copy</span>
       </Link>
       <Link href="/tools/youtube-creator" className="gfs-link">
         <span>🎬</span><span className="gfs-text">YouTube Suite</span>
+      </Link>
+      <Link href="/tools/tiktok-tools" className="gfs-link">
+        <span>🎵</span><span className="gfs-text">TikTok Suite</span>
       </Link>
       <Link href="/tools/viral-shorts-generator" className="gfs-link">
         <span>📱</span><span className="gfs-text">Viral Shorts</span>
       </Link>
       <Link href="/tools/faceless-video-generator" className="gfs-link">
         <span>🎭</span><span className="gfs-text">Faceless Video</span>
-      </Link>
-      <Link href="/tools/ai-humanizer" className="gfs-link">
-        <span>🧠</span><span className="gfs-text">AI Humanizer</span>
       </Link>
       <Link href="/platforms-views" className="gfs-link">
         <span>🌐</span><span className="gfs-text">Platforms Views</span>
