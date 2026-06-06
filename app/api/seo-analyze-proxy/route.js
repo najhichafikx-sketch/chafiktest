@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getSetting } from '@/lib/db';
 
-function getApiKey() {
+async function getApiKey() {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
   try {
     const fs = require('fs');
@@ -14,6 +15,10 @@ function getApiKey() {
       }
     }
   } catch (e) {}
+  try {
+    const dbKey = await getSetting('openrouter_api_key');
+    if (dbKey && typeof dbKey === 'string' && dbKey.trim()) return dbKey.trim();
+  } catch (e) {}
   return null;
 }
 
@@ -26,7 +31,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Article is required' }, { status: 400 });
     }
 
-    const apiKey = getApiKey();
+    const apiKey = await getApiKey();
     if (!apiKey) {
       return NextResponse.json({ error: 'OpenRouter API key not configured.' }, { status: 503 });
     }

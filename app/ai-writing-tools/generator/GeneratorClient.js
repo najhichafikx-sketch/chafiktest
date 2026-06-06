@@ -35,7 +35,7 @@ export default function GeneratorClient() {
         body: JSON.stringify({ topic, language, tone, wordCount })
       });
       const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Request failed');
+      if (!res.ok) throw new Error(d.error || `Request failed (${res.status})`);
       setArticle(d.result);
     } catch (e) {
       setError(e.message);
@@ -241,7 +241,8 @@ export default function GeneratorClient() {
 
           {error && (
             <div style={{ marginTop: 40, textAlign: 'center', padding: 24, background: '#1e293b', borderRadius: 12 }}>
-              <p style={{ color: '#ef4444', marginBottom: 16 }}>Something went wrong. Please try again.</p>
+              <p style={{ color: '#ef4444', marginBottom: 8, fontWeight: 600 }}>Something went wrong</p>
+              <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 16, wordBreak: 'break-word' }}>{error}</p>
               <button onClick={generate} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontSize: 14 }}>
                 Retry
               </button>
