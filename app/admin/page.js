@@ -277,6 +277,7 @@ export default function AdminPage() {
   const navCards = [
     { icon: Wrench, label: 'Tools', desc: 'Manage AI tools and configurations', href: '/admin/tools', color: '#8b5cf6' },
     { icon: DollarSign, label: 'Revenue', desc: 'Revenue statistics and reports', href: '/admin/revenue-dashboard', color: '#10b981' },
+    { icon: Megaphone, label: 'Ad Monetization', desc: 'Smart ad controller, RPM, and analytics', href: '/admin/ad-monetization', color: '#f72585' },
     { icon: BarChart3, label: 'Analytics', desc: 'Traffic and engagement metrics', href: '/admin/analytics', color: '#3b82f6' },
     { icon: Settings, label: 'Settings', desc: 'General site configuration', href: '/admin/settings', color: '#6b7280' },
     { icon: Key, label: 'API Keys', desc: 'Manage API credentials', href: '/admin/api-settings', color: '#ec4899' },

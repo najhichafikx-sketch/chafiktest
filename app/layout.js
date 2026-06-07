@@ -7,6 +7,7 @@ import AnalyticsTracker from '@/components/AnalyticsTracker';
 import MonetagServiceWorker from '@/components/MonetagServiceWorker';
 import BannerSlot from '@/components/ads/BannerSlot';
 import SideBanner from '@/components/ads/SideBanner';
+import SmartAdBootstrap from '@/components/SmartAdBootstrap';
 import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/lib/seo';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
       <body className="bg-mesh bg-grid">
         <AnalyticsTracker />
         <MonetagServiceWorker />
+        <SmartAdBootstrap />
         <Navbar />
         <BannerSlot slotId="site-top" />
         <SideBanner side="left" />
