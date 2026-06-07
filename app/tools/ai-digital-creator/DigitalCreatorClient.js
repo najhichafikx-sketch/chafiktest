@@ -17,7 +17,8 @@ const TABS = [
   { id: 'pricing', label: 'التسعير' },
   { id: 'marketing', label: 'التسويق' },
   { id: 'cro', label: 'CRO' },
-  { id: 'intelligence', label: '🔥 Market Intel' }
+  { id: 'intelligence', label: '🔥 Market Intel' },
+  { id: 'listing', label: '🔥 Listing Gen' }
 ];
 
 const READINESS_FIELDS = ['title', 'description', 'keywords'];
@@ -40,6 +41,11 @@ export default function DigitalCreatorClient() {
   const [intelligence, setIntelligence] = useState(null);
   const [intelLoading, setIntelLoading] = useState(false);
   const [intelError, setIntelError] = useState(null);
+  const [listingInput, setListingInput] = useState('');
+  const [listing, setListing] = useState(null);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [listingError, setListingError] = useState(null);
+  const [listingPlatform, setListingPlatform] = useState('etsy');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -145,6 +151,34 @@ export default function DigitalCreatorClient() {
       setIntelError(e.message);
     } finally {
       setIntelLoading(false);
+    }
+  };
+
+  const generateListings = async (overrideName = null) => {
+    const name = (overrideName || listingInput || title || '').trim();
+    if (!name || name.length < 2) {
+      setListingError('Please enter a product name (2+ characters).');
+      return;
+    }
+    if (listingLoading) return;
+    if (overrideName) setListingInput(overrideName);
+    setListingLoading(true);
+    setListingError(null);
+    setListing(null);
+    try {
+      const res = await fetch('/api/digital-creator/listing-generator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_name: name })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate listings');
+      setListing(data);
+      setListingPlatform('etsy');
+    } catch (e) {
+      setListingError(e.message);
+    } finally {
+      setListingLoading(false);
     }
   };
 
@@ -429,6 +463,156 @@ export default function DigitalCreatorClient() {
                 <div style={{ background: '#0f0f1a', border: '1px dashed #2d2d4e', borderRadius: 8, padding: 10, marginTop: 10, color: '#64748b', fontSize: 11, textAlign: 'center' }}>
                   ℹ️ Publish Adapter Layer prepares structured payloads. Actual publishing requires your platform credentials and is not automated.
                 </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+    if (activeTab === 'listing') {
+      const platformMeta = {
+        etsy: { name: 'Etsy', emoji: '🛍️', color: '#F56400' },
+        amazon_kdp: { name: 'Amazon KDP', emoji: '📚', color: '#FF9900' },
+        gumroad: { name: 'Gumroad', emoji: '💸', color: '#FF90E8' },
+        tpt: { name: 'TPT', emoji: '🎓', color: '#00B4D8' },
+        creative_fabrica: { name: 'Creative Fabrica', emoji: '🎨', color: '#5C2D91' }
+      };
+      const platformOrder = ['etsy', 'amazon_kdp', 'gumroad', 'tpt', 'creative_fabrica'];
+      const currentPlatform = listing?.platforms?.[listingPlatform];
+      const currentMeta = platformMeta[listingPlatform];
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: 'linear-gradient(135deg, #16162a, #1e1e3a)', border: '1px solid #2d2d4e', borderRadius: 14, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>🔥</span>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#fff' }}>AI Platform-Specific Product Listing Generator</h2>
+                <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 12 }}>One product name → 5 platform-optimized listings (Etsy, KDP, Gumroad, TPT, Creative Fabrica)</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                value={listingInput}
+                onChange={e => setListingInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') generateListings(); }}
+                placeholder='e.g. "AI Instagram Content Planner"'
+                data-tool-action
+                style={{ flex: '1 1 240px', background: '#0f0f1a', border: '1px solid #2d2d4e', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }}
+              />
+              <button onClick={() => generateListings()} disabled={listingLoading || !listingInput.trim()} data-tool-action
+                style={{ background: listingLoading || !listingInput.trim() ? '#2d2d4e' : 'linear-gradient(135deg, #f72585, #6c63ff)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 700, cursor: listingLoading || !listingInput.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                {listingLoading ? '⏳ Generating...' : '✨ Generate Listings'}
+              </button>
+            </div>
+            {title && !listingInput && (
+              <button onClick={() => generateListings(title)} data-tool-action
+                style={{ marginTop: 8, background: 'transparent', color: '#a5b4fc', border: '1px dashed #2d2d4e', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                ⚡ Use the current analysis title: "{title}"
+              </button>
+            )}
+          </div>
+
+          {listingError && (
+            <div style={{ background: '#7f1d1d33', border: '1px solid #ef4444', borderRadius: 10, padding: 14, color: '#fca5a5', fontSize: 13 }}>
+              ⚠️ {listingError}
+              <button onClick={() => generateListings()} style={{ marginLeft: 12, background: '#2d2d4e', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>Retry</button>
+            </div>
+          )}
+
+          {listingLoading && (
+            <div style={{ background: '#16162a', border: '1px solid #2d2d4e', borderRadius: 14, padding: 36, textAlign: 'center' }}>
+              <div style={{ width: 50, height: 50, border: '4px solid #2d2d4e', borderTopColor: '#f72585', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 14px' }} />
+              <p style={{ color: '#cbd5e1', fontSize: 14, margin: 0 }}>AI is generating optimized listings for all 5 platforms...</p>
+              <p style={{ color: '#64748b', fontSize: 11, margin: '6px 0 0' }}>Single API call · ~10-25 seconds</p>
+            </div>
+          )}
+
+          {listing && currentPlatform && currentMeta && (
+            <>
+              <div style={{ background: '#16162a', border: '1px solid #2d2d4e', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Product</div>
+                  <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{listing.product_name}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  {listing.meta?.cached && <span style={{ fontSize: 10, color: '#64748b', background: '#0f0f1a', padding: '4px 8px', borderRadius: 4 }}>♻️ Cached</span>}
+                  <span style={{ fontSize: 10, color: '#a5b4fc', background: '#6c63ff22', padding: '4px 8px', borderRadius: 4 }}>✨ AI-generated</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', background: '#0f0f1a', padding: 8, borderRadius: 12, border: '1px solid #2d2d4e' }}>
+                {platformOrder.map(pid => {
+                  const meta = platformMeta[pid];
+                  const isActive = pid === listingPlatform;
+                  return (
+                    <button key={pid} onClick={() => setListingPlatform(pid)} data-tool-action
+                      style={{ background: isActive ? meta.color : 'transparent', color: isActive ? '#fff' : '#94a3b8', border: '1px solid ' + (isActive ? meta.color : '#2d2d4e'), borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>{meta.emoji}</span>
+                      {meta.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ background: 'linear-gradient(135deg, #16162a, #1e1e3a)', border: '2px solid ' + currentMeta.color, borderRadius: 14, padding: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ fontSize: 24 }}>{currentMeta.emoji}</span>
+                  <h3 style={{ margin: 0, color: '#fff', fontSize: 16 }}>{currentMeta.name} Listing</h3>
+                </div>
+
+                <div style={{ background: '#0f0f1a', border: '1px solid #2d2d4e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, color: currentMeta.color, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>SEO Title</span>
+                    <button onClick={() => copy(currentPlatform.title, `listing-title-${listingPlatform}`)} data-tool-action
+                      style={{ background: copiedKey === `listing-title-${listingPlatform}` ? '#10b981' : '#2d2d4e', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      {copiedKey === `listing-title-${listingPlatform}` ? '✅ Copied' : '📋 Copy'}
+                    </button>
+                  </div>
+                  <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>{currentPlatform.title}</div>
+                  <div style={{ color: '#64748b', fontSize: 10, marginTop: 6 }}>{currentPlatform.title.length} characters</div>
+                </div>
+
+                <div style={{ background: '#0f0f1a', border: '1px solid #2d2d4e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, color: currentMeta.color, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>Description</span>
+                    <button onClick={() => copy(currentPlatform.description, `listing-desc-${listingPlatform}`)} data-tool-action
+                      style={{ background: copiedKey === `listing-desc-${listingPlatform}` ? '#10b981' : '#2d2d4e', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      {copiedKey === `listing-desc-${listingPlatform}` ? '✅ Copied' : '📋 Copy'}
+                    </button>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{currentPlatform.description}</div>
+                </div>
+
+                <div style={{ background: '#0f0f1a', border: '1px solid #2d2d4e', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, color: currentMeta.color, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>SEO Keywords · {currentPlatform.keywords.length} tags</span>
+                    <button onClick={() => copy(currentPlatform.keywords.join(', '), `listing-kw-${listingPlatform}`)} data-tool-action
+                      style={{ background: copiedKey === `listing-kw-${listingPlatform}` ? '#10b981' : '#2d2d4e', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      {copiedKey === `listing-kw-${listingPlatform}` ? '✅ Copied' : '📋 Copy All'}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {currentPlatform.keywords.map((kw, i) => (
+                      <span key={i} style={{ background: currentMeta.color + '22', color: currentMeta.color, border: '1px solid ' + currentMeta.color + '55', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600 }}>#{kw}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ background: '#0f0f1a', border: '1px solid #2d2d4e', borderRadius: 10, padding: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, color: currentMeta.color, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>🎨 AI Image Prompt (Midjourney / DALL·E)</span>
+                    <button onClick={() => copy(currentPlatform.image_prompt, `listing-img-${listingPlatform}`)} data-tool-action
+                      style={{ background: copiedKey === `listing-img-${listingPlatform}` ? '#10b981' : '#2d2d4e', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      {copiedKey === `listing-img-${listingPlatform}` ? '✅ Copied' : '📋 Copy'}
+                    </button>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: 12, lineHeight: 1.7, fontStyle: 'italic' }}>{currentPlatform.image_prompt}</div>
+                </div>
+              </div>
+
+              <div style={{ background: '#0f0f1a', border: '1px dashed #2d2d4e', borderRadius: 8, padding: 12, color: '#64748b', fontSize: 11, textAlign: 'center' }}>
+                💡 Tip: Each tab holds its own copy. Switch platforms freely — no re-fetch. Generated once · cached for 1 hour.
               </div>
             </>
           )}
