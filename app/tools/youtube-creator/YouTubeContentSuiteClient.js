@@ -195,7 +195,7 @@ export default function YouTubeContentSuiteClient() {
         body: JSON.stringify({ videoId, url: videoUrl })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch transcript');
+      if (!res.ok) throw new Error(data.message || data.error || `Transcript fetch failed (HTTP ${res.status}). The video may not have captions, or all public transcript APIs are down. Please paste the transcript manually below.`);
       const text = data.transcript || data.text || (Array.isArray(data.segments) ? data.segments.map(s => s.text).join(' ') : '');
       if (!text) throw new Error('No transcript available for this video. The video may be private, age-restricted, or have captions disabled.');
       setTranscript(text);
