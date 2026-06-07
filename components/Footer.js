@@ -42,8 +42,8 @@ export default function Footer() {
             <Link href="/tools/pricing-optimizer">Pricing Optimizer</Link>
           </div>
           <div className="footer-column">
-            <h4>YouTube Suite</h4>
-            <Link href="/tools/youtube-creator">All YouTube Tools</Link>
+            <h4>YouTube Creator Suite Pro</h4>
+            <Link href="/tools/youtube-creator">Open YouTube Pro</Link>
             <Link href="/tools/viral-video-ideas">Viral Video Ideas</Link>
             <Link href="/tools/youtube-script-generator">Script Generator</Link>
             <Link href="/tools/youtube-seo-optimizer">SEO Optimizer</Link>
@@ -120,7 +120,7 @@ function QuickToolsSidebar() {
           <span>💼</span><span className="gfs-text">Sales Copy</span>
         </Link>
         <Link href="/tools/youtube-creator" className="gfs-link">
-          <span>🎬</span><span className="gfs-text">YouTube Suite</span>
+          <span>🎬</span><span className="gfs-text">YouTube Pro</span>
         </Link>
         <Link href="/tools/tiktok-tools" className="gfs-link">
           <span>🎵</span><span className="gfs-text">TikTok Suite</span>
