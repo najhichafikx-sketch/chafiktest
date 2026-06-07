@@ -30,15 +30,6 @@ export default function AdminPage() {
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [lastUsed, setLastUsed] = useState(null);
 
-  const [ytKeyInput, setYtKeyInput] = useState('');
-  const [ytKeyVisible, setYtKeyVisible] = useState(false);
-  const [ytKeyConfigured, setYtKeyConfigured] = useState(false);
-  const [ytSaving, setYtSaving] = useState(false);
-  const [ytMessage, setYtMessage] = useState('');
-  const [ytTestResult, setYtTestResult] = useState('');
-  const [ytTestHint, setYtTestHint] = useState('');
-  const [ytTesting, setYtTesting] = useState(false);
-
   useEffect(() => {
     const t = localStorage.getItem('admin_token');
     if (!t) { router.push('/admin-login'); return; }
@@ -46,7 +37,6 @@ export default function AdminPage() {
     fetchStatus(t);
     fetchLogs(t);
     fetchAiSettings(t);
-    fetchYtSettings(t);
   }, [router]);
 
   async function fetchStatus(t) {
@@ -88,18 +78,6 @@ export default function AdminPage() {
       if (data.success) {
         setMonthlyUsage(data.monthly || 0);
         setLastUsed(data.last_used || null);
-      }
-    } catch (e) {}
-  }
-
-  async function fetchYtSettings(t) {
-    try {
-      const res = await fetch('/api/admin/settings/youtube', {
-        headers: { 'Authorization': `Bearer ${t}` }
-      });
-      const data = await res.json();
-      if (data && data.success) {
-        setYtKeyConfigured(!!data.isConfigured);
       }
     } catch (e) {}
   }
@@ -199,66 +177,6 @@ export default function AdminPage() {
       setAiTestHint('');
     } finally {
       setAiTesting(false);
-    }
-  }
-
-  async function handleSaveYtKey(e) {
-    e?.preventDefault();
-    if (!ytKeyInput.trim() || ytSaving) return;
-    setYtSaving(true);
-    setYtMessage('');
-    try {
-      const res = await fetch('/api/admin/settings/youtube', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: ytKeyInput.trim() })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setYtMessage('✅ ' + (data.message || 'Saved successfully'));
-        setYtKeyInput('');
-        setYtKeyConfigured(true);
-        fetchStatus(token);
-      } else {
-        setYtMessage('❌ ' + (data.message || 'Save failed'));
-      }
-    } catch (e) {
-      setYtMessage('❌ Network error');
-    } finally {
-      setYtSaving(false);
-    }
-  }
-
-  async function handleTestYtConnection() {
-    if (ytTesting) return;
-    setYtTesting(true);
-    setYtTestResult('');
-    setYtTestHint('');
-    try {
-      const keyToTest = ytKeyInput.trim();
-      if (!keyToTest) {
-        setYtTestResult('✗ Please paste a key to test');
-        setYtTesting(false);
-        return;
-      }
-      const res = await fetch('/api/admin/settings/youtube/test', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: keyToTest })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setYtTestResult('✓ ' + (data.message || 'Connection successful'));
-        setYtTestHint('');
-      } else {
-        setYtTestResult('✗ ' + (data.message || 'Connection failed'));
-        setYtTestHint(data.hint || '');
-      }
-    } catch {
-      setYtTestResult('✗ Connection failed');
-      setYtTestHint('');
-    } finally {
-      setYtTesting(false);
     }
   }
 
@@ -516,101 +434,6 @@ export default function AdminPage() {
             {lpModelMessage}
           </div>
         )}
-
-        <div style={{
-          marginTop: 18, paddingTop: 18,
-          borderTop: '1px solid var(--bg-glass-border)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>YouTube Data API v3 Key</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                The YouTube Data API v3 key — used by the YouTube Creator Suite Pro tool (trends + YouTube utilities).
-              </div>
-            </div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: ytKeyConfigured ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: ytKeyConfigured ? '#10b981' : '#ef4444', border: `1px solid ${ytKeyConfigured ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
-              {ytKeyConfigured ? '🟢 Connected' : '🔴 Not configured'}
-            </div>
-          </div>
-
-          <form onSubmit={handleSaveYtKey} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ position: 'relative', flex: 1, minWidth: 280 }}>
-                <input
-                  type={ytKeyVisible ? 'text' : 'password'}
-                  value={ytKeyInput}
-                  onChange={e => setYtKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  style={{ ...aiInputStyle, paddingRight: 44, width: '100%' }}
-                  autoComplete="off"
-                  spellCheck="false"
-                />
-                <button
-                  type="button"
-                  onClick={() => setYtKeyVisible(v => !v)}
-                  aria-label={ytKeyVisible ? 'Hide' : 'Show'}
-                  style={{
-                    position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                    background: 'transparent', border: 'none', color: 'var(--text-secondary)',
-                    cursor: 'pointer', padding: 4, display: 'flex'
-                  }}
-                >
-                  {ytKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              <button
-                type="submit"
-                disabled={ytSaving || !ytKeyInput.trim()}
-                className="btn btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600 }}
-              >
-                {ytSaving ? '⏳ Saving...' : '💾 Save'}
-              </button>
-              <button
-                type="button"
-                onClick={handleTestYtConnection}
-                disabled={ytTesting}
-                className="btn btn-secondary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600 }}
-              >
-                {ytTesting ? '⏳ Testing...' : '🔌 Test Connection'}
-              </button>
-            </div>
-
-            {ytMessage && (
-              <div style={{
-                fontSize: 13, fontWeight: 600,
-                color: ytMessage.startsWith('✅') ? '#10b981' : '#ef4444',
-                padding: '8px 12px', background: ytMessage.startsWith('✅') ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                borderRadius: 8, border: `1px solid ${ytMessage.startsWith('✅') ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
-              }}>
-                {ytMessage}
-              </div>
-            )}
-
-            {ytTestResult && (
-              <div style={{
-                fontSize: 13, fontWeight: 700,
-                color: ytTestResult.startsWith('✓') ? '#10b981' : '#ef4444',
-                padding: '8px 12px', background: ytTestResult.startsWith('✓') ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                borderRadius: 8, border: `1px solid ${ytTestResult.startsWith('✓') ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
-              }}>
-                {ytTestResult}
-              </div>
-            )}
-
-            {ytTestHint && (
-              <div style={{
-                fontSize: 12, color: 'var(--text-secondary)',
-                padding: '8px 12px', background: 'rgba(245,158,11,0.08)',
-                borderRadius: 8, border: '1px solid rgba(245,158,11,0.3)',
-                lineHeight: 1.5
-              }}>
-                💡 {ytTestHint}
-              </div>
-            )}
-          </form>
-        </div>
       </div>
 
       <div style={{

@@ -42,8 +42,8 @@ export default function Footer() {
             <Link href="/tools/pricing-optimizer">Pricing Optimizer</Link>
           </div>
           <div className="footer-column">
-            <h4>YouTube Creator Suite Pro</h4>
-            <Link href="/tools/youtube-creator">Open YouTube Pro</Link>
+            <h4>YouTube AI Content Suite</h4>
+            <Link href="/tools/youtube-creator">Open AI Content Suite</Link>
             <Link href="/tools/viral-video-ideas">Viral Video Ideas</Link>
             <Link href="/tools/youtube-script-generator">Script Generator</Link>
             <Link href="/tools/youtube-seo-optimizer">SEO Optimizer</Link>
