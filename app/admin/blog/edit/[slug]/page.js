@@ -65,7 +65,7 @@ export default function EditBlogPost() {
     id: null, slug: '', title: '', content: '', excerpt: '', category: 'General',
     tags: [], author: 'Chafiktech Ai', meta_description: '',
     seo_title: '', keywords: [],
-    reading_time: 5, status: 'draft', featured_image: '', external_link: ''
+    reading_time: 5, status: 'published', featured_image: '', external_link: ''
   });
   const [selectedChips, setSelectedChips] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -243,7 +243,7 @@ export default function EditBlogPost() {
     const payload = {
       ...form,
       id: undefined,
-      status: isNew ? 'published' : form.status,
+      status: 'published',
       tags: [...new Set([...selectedChips, ...form.tags.filter(t => !TOOL_CHIPS.includes(t))])],
       keywords: Array.isArray(form.keywords) ? form.keywords : form.keywords.split(',').map(k => k.trim()).filter(Boolean),
       reading_time: parseInt(form.reading_time) || 5,
