@@ -65,7 +65,7 @@ export default function EditBlogPost() {
     id: null, slug: '', title: '', content: '', excerpt: '', category: 'General',
     tags: [], author: 'Chafiktech Ai', meta_description: '',
     seo_title: '', keywords: [],
-    reading_time: 5, status: 'draft', featured_image: ''
+    reading_time: 5, status: 'draft', featured_image: '', external_link: ''
   });
   const [selectedChips, setSelectedChips] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -101,9 +101,10 @@ export default function EditBlogPost() {
               seo_title: p.seo_title || p.title || '',
               keywords: kwArr,
               reading_time: p.reading_time || 5,
-              status: p.status || 'draft',
-              featured_image: p.featured_image || ''
-            });
+                status: p.status || 'draft',
+                featured_image: p.featured_image || '',
+                external_link: p.external_link || ''
+              });
             setSelectedChips(tagsArr.filter(t => TOOL_CHIPS.includes(t)));
           }
         }
@@ -479,6 +480,22 @@ export default function EditBlogPost() {
                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
               </label>
             )}
+          </div>
+
+          {/* External Link */}
+          <div style={cardStyle}>
+            <label style={labelStyle}>External Link</label>
+            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-tertiary, #999)', lineHeight: 1.4 }}>
+              رابط موقع خارجي يظهر في المقال. عند الضغط عليه يتجه الزائر إلى هذا الرابط.
+            </p>
+            <input
+              value={form.external_link}
+              onChange={e => set('external_link', e.target.value)}
+              placeholder="https://example.com"
+              style={inputStyle}
+              onFocus={e => Object.assign(e.target.style, inputFocus)}
+              onBlur={e => { e.target.style.borderColor = 'var(--card-border, #d0d4dc)'; e.target.style.boxShadow = 'none'; }}
+            />
           </div>
 
           {/* Linked Tools */}
