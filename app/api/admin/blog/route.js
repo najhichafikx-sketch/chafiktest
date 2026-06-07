@@ -42,8 +42,12 @@ export async function POST(request) {
 
   try {
     const result = await createBlogPost(body);
+    if (!result || (!result.id && !result.slug)) {
+      return Response.json({ success: false, message: 'createBlogPost returned empty result' }, { status: 500 });
+    }
     return Response.json({ success: true, id: result.id, message: 'Post created' });
   } catch (err) {
-    return Response.json({ success: false, message: 'Failed to create post' }, { status: 500 });
+    console.error('Admin blog POST error:', err);
+    return Response.json({ success: false, message: err.message || 'Failed to create post' }, { status: 500 });
   }
 }
