@@ -25,8 +25,10 @@ for (const post of SEED_POSTS) BLOG_CONTENT_MAP[post.slug] = post.content;
 for (const post of YOUTUBE_BLOG_POSTS) BLOG_CONTENT_MAP[post.slug] = post.content;
 
 const TOOL_SLUG_TO_ID = {};
+const TOOL_SLUG_TO_URL = {};
 for (const [id, data] of Object.entries(TOOL_ARTICLES)) {
   TOOL_SLUG_TO_ID[data.slug] = id;
+  TOOL_SLUG_TO_URL[data.slug] = data.toolUrl || id;
 }
 
 function fallbackImage(slug) {
@@ -101,7 +103,8 @@ export default async function BlogArticle({ params }) {
 
   const toolId = TOOL_SLUG_TO_ID[post.slug];
   const toolName = toolId ? (TOOL_NAMES[toolId]?.name || null) : null;
-  const toolHref = toolId ? `/tools/${toolId}` : null;
+  const toolFolder = TOOL_SLUG_TO_URL[post.slug];
+  const toolHref = toolFolder ? `/tools/${toolFolder}` : null;
   const content = BLOG_CONTENT_MAP[post.slug];
 
   const [dbPost, allDbPosts] = await Promise.all([getDbPost(slug), getAllDbPosts()]);
