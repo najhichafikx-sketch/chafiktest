@@ -65,7 +65,7 @@ export default function EditBlogPost() {
     id: null, slug: '', title: '', content: '', excerpt: '', category: 'General',
     tags: [], author: 'Chafiktech Ai', meta_description: '',
     seo_title: '', keywords: [],
-    reading_time: 5, status: 'published', featured_image: '', external_link: ''
+    reading_time: 5, status: 'published', featured_image: '', external_link: '', external_link_label: ''
   });
   const [selectedChips, setSelectedChips] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -103,7 +103,8 @@ export default function EditBlogPost() {
               reading_time: p.reading_time || 5,
                 status: p.status || 'draft',
                 featured_image: p.featured_image || '',
-                external_link: p.external_link || ''
+                external_link: p.external_link || '',
+                external_link_label: p.external_link_label || ''
               });
             setSelectedChips(tagsArr.filter(t => TOOL_CHIPS.includes(t)));
           }
@@ -493,10 +494,21 @@ export default function EditBlogPost() {
               value={form.external_link}
               onChange={e => set('external_link', e.target.value)}
               placeholder="https://example.com"
+              style={{ ...inputStyle, marginBottom: 10 }}
+              onFocus={e => Object.assign(e.target.style, inputFocus)}
+              onBlur={e => { e.target.style.borderColor = 'var(--card-border, #d0d4dc)'; e.target.style.boxShadow = 'none'; }}
+            />
+            <input
+              value={form.external_link_label}
+              onChange={e => set('external_link_label', e.target.value)}
+              placeholder="Blur Image Tool"
               style={inputStyle}
               onFocus={e => Object.assign(e.target.style, inputFocus)}
               onBlur={e => { e.target.style.borderColor = 'var(--card-border, #d0d4dc)'; e.target.style.boxShadow = 'none'; }}
             />
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary, #999)', marginTop: 6 }}>
+              الاسم يظهر باللغة الإنجليزية على زر الرابط في المقال
+            </div>
           </div>
 
           {/* Linked Tools */}
