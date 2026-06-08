@@ -23,16 +23,22 @@ export default function CanvasPreview({ loading, result, onDownload, onRedo, pro
   return (
     <div className="flex-1 flex flex-col" style={{ backgroundColor: '#0d0d0f' }}>
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-4xl rounded-xl flex flex-col items-center justify-center overflow-hidden relative transition-all duration-500"
-          style={{ aspectRatio: '16 / 9', backgroundColor: '#111114', border: '1px solid #1e1e22' }}>
+        <div className="w-full max-w-4xl rounded-2xl flex flex-col items-center justify-center overflow-hidden relative transition-all duration-500"
+          style={{
+            aspectRatio: '16 / 9',
+            backgroundColor: '#111114',
+            border: '1px solid rgba(255,255,255,0.04)',
+            boxShadow: result ? '0 0 80px rgba(212,168,39,0.06)' : 'inset 0 0 80px rgba(0,0,0,0.3)',
+          }}>
           {loading ? (
             <div className="flex flex-col items-center px-8 w-full max-w-sm">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: 'rgba(212,168,39,0.1)' }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 animate-pulse" style={{ backgroundColor: 'rgba(212,168,39,0.1)' }}>
                 <Wand2 size={24} className="text-[#d4a827]" />
               </div>
               <div className="w-full mb-4">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#1e1e22' }}>
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: '#d4a827' }} />
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                  <div className="h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${progress}%`, backgroundColor: '#d4a827', boxShadow: '0 0 12px rgba(212,168,39,0.3)' }} />
                 </div>
               </div>
               <div className="flex items-center gap-2.5 mb-1">
@@ -57,16 +63,29 @@ export default function CanvasPreview({ loading, result, onDownload, onRedo, pro
                   <RotateCcw size={14} /> Redo
                 </button>
               </div>
+              <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <span className="px-3 py-1.5 rounded-lg text-[9px] font-medium" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#9a9890', backdropFilter: 'blur(8px)' }}>
+                  AI Generated
+                </span>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center text-center animate-in fade-in duration-700">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: 'rgba(212,168,39,0.08)', border: '1px solid rgba(212,168,39,0.1)' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 hover:scale-105 cursor-default"
+                style={{ backgroundColor: 'rgba(212,168,39,0.08)', border: '1px solid rgba(212,168,39,0.1)' }}>
                 <Sparkles size={26} className="text-[#d4a827]" />
               </div>
               <h2 className="text-xl font-extrabold mb-1 tracking-tight" style={{ color: '#e8e6e0' }}>Ready to create</h2>
               <p className="text-[12px]" style={{ color: '#9a9890', maxWidth: 240, lineHeight: 1.6 }}>
-                Configure your settings on the left to generate your next thumbnail.
+                Configure your settings in the tool panel and click <span style={{ color: '#d4a827', fontWeight: 600 }}>Create</span> to generate
               </p>
+              <div className="flex items-center gap-2.5 mt-5">
+                {['16:9', '9:16'].map((a) => (
+                  <div key={a} className="px-2.5 py-1 rounded-lg text-[9px] font-mono" style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: '#5a5a62', border: '1px solid rgba(255,255,255,0.04)' }}>
+                    {a}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
