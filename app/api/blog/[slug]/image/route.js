@@ -4,13 +4,37 @@ import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
+function placeholderSVG(slug) {
+  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const bg = '#111114';
+  const fg = '#d4a827';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+    <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${bg}"/><stop offset="100%" stop-color="#0d0d0f"/></linearGradient></defs>
+    <rect width="800" height="450" fill="url(#g)"/>
+    <rect x="1" y="1" width="798" height="448" fill="none" stroke="${fg}" stroke-opacity="0.15" stroke-width="2" rx="8"/>
+    <text x="400" y="210" text-anchor="middle" fill="${fg}" font-size="28" font-weight="700" font-family="system-ui,sans-serif">${title}</text>
+    <text x="400" y="245" text-anchor="middle" fill="#94a3b8" font-size="14" font-family="system-ui,sans-serif">chafiktech.com</text>
+  </svg>`;
+}
+
 export async function GET(request, { params }) {
   try {
     const { slug } = await params;
     const isPngRequest = request.nextUrl.searchParams.get('__fmt') === 'png';
     const post = await getBlogPostBySlug(slug);
+
+    // No post or no image → return placeholder
     if (!post || !post.featured_image) {
-      return new Response(null, { status: 404 });
+      const svg = placeholderSVG(slug);
+      const buf = Buffer.from(svg);
+      return new Response(buf, {
+        status: 200,
+        headers: {
+          'Content-Type': isPngRequest ? 'image/png' : 'image/svg+xml',
+          'Cache-Control': 'public, max-age=3600',
+          'Content-Length': String(buf.length)
+        }
+      });
     }
 
     const img = post.featured_image;
@@ -18,7 +42,18 @@ export async function GET(request, { params }) {
     // File-based image
     if (typeof img === 'string' && img.startsWith('/uploads/')) {
       const filePath = path.join(process.cwd(), 'public', img);
-      if (!fs.existsSync(filePath)) return new Response(null, { status: 404 });
+      if (!fs.existsSync(filePath)) {
+        const svg = placeholderSVG(slug);
+        const buf = Buffer.from(svg);
+        return new Response(buf, {
+          status: 200,
+          headers: {
+            'Content-Type': isPngRequest ? 'image/png' : 'image/svg+xml',
+            'Cache-Control': 'public, max-age=3600',
+            'Content-Length': String(buf.length)
+          }
+        });
+      }
       const buf = fs.readFileSync(filePath);
       const mime = isPngRequest ? 'image/png' : (() => {
         const ext = path.extname(filePath).slice(1);
@@ -36,7 +71,16 @@ export async function GET(request, { params }) {
 
     // Legacy base64 image
     if (typeof img !== 'string' || !img.startsWith('data:')) {
-      return new Response(null, { status: 404 });
+      const svg = placeholderSVG(slug);
+      const buf = Buffer.from(svg);
+      return new Response(buf, {
+        status: 200,
+        headers: {
+          'Content-Type': isPngRequest ? 'image/png' : 'image/svg+xml',
+          'Cache-Control': 'public, max-age=3600',
+          'Content-Length': String(buf.length)
+        }
+      });
     }
     const comma = img.indexOf(',');
     const mime = isPngRequest ? 'image/png' : (img.slice(5, comma).split(';')[0] || 'image/jpeg');
