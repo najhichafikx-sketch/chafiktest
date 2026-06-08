@@ -5,7 +5,9 @@ export async function GET() {
     const posts = await getBlogPosts('published');
     const cleaned = (posts || []).map(p => {
       const hasBase64 = typeof p.featured_image === 'string' && p.featured_image.startsWith('data:');
-      return { ...p, featured_image: hasBase64 ? '' : (p.featured_image || ''), has_image: hasBase64 };
+      const updated = p.updated_at || p.published_at || p.created_at || '';
+      const ver = typeof updated === 'string' ? updated.replace(/[^0-9]/g, '').slice(0, 14) : String(Date.now());
+      return { ...p, featured_image: hasBase64 ? '' : (p.featured_image || ''), has_image: hasBase64, image_version: ver };
     });
     return Response.json({ success: true, posts: cleaned });
   } catch (err) {
