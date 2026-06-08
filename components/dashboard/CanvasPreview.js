@@ -1,104 +1,203 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Download, RotateCcw } from 'lucide-react';
+import { Sparkles, Download, RotateCcw, Wand2 } from 'lucide-react';
 
-const STEPS = [
-  { icon: '🎨', text: 'Generating background...' },
-  { icon: '✂️', text: 'Removing background...' },
-  { icon: '✨', text: 'Applying effects...' },
-  { icon: '🖼️', text: 'Compositing layers...' },
-  { icon: '🎯', text: 'Final touches...' },
+const LOADING_STEPS = [
+  'Generating background...',
+  'Removing background...',
+  'Applying effects...',
+  'Compositing layers...',
+  'Final touches...',
 ];
 
-export default function CanvasPreview({ loading, result, onDownload, onRedo, progress }) {
-  const [idx, setIdx] = useState(0);
+export default function CanvasPreview({ loading, result, onDownload, onRedo, progress, dimension = '16:9' }) {
+  const [stepIdx, setStepIdx] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (!loading) { setIdx(0); return; }
-    timerRef.current = setInterval(() => setIdx(i => (i + 1) % STEPS.length), 2500);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!loading) {
+      setStepIdx(0);
+      return;
+    }
+    timerRef.current = setInterval(() => {
+      setStepIdx((i) => (i + 1) % LOADING_STEPS.length);
+    }, 2200);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [loading]);
 
+  const isVertical = dimension === '9:16';
+
   return (
-    <div className="flex-1 flex flex-col relative" style={{ backgroundColor: '#0a0a0f' }}>
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-4xl rounded-2xl flex flex-col items-center justify-center overflow-hidden relative transition-all duration-500"
+    <div
+      className="flex-1 flex flex-col overflow-y-auto"
+      style={{ backgroundColor: '#0d0d0f' }}
+    >
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{ padding: 32, minHeight: 400 }}
+      >
+        <div
+          className="relative w-full flex items-center justify-center"
           style={{
-            aspectRatio: '16 / 9',
-            backgroundColor: '#121218',
-            border: '1px solid rgba(255,255,255,0.04)',
-            boxShadow: result ? '0 0 80px rgba(234,179,8,0.05)' : 'inset 0 0 60px rgba(0,0,0,0.4)',
-          }}>
+            maxWidth: isVertical ? 360 : 800,
+            aspectRatio: isVertical ? '9 / 16' : '16 / 9',
+            backgroundColor: '#111114',
+            border: '1px solid #1e1e22',
+            borderRadius: 12,
+            overflow: 'hidden',
+          }}
+        >
           {loading ? (
-            <div className="flex flex-col items-center px-8 w-full max-w-sm">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 animate-pulse" style={{ backgroundColor: 'rgba(234,179,8,0.08)' }}>
-                <Sparkles size={24} className="text-[#eab308]" />
+            <div
+              className="flex flex-col items-center"
+              style={{ padding: 32, maxWidth: 320, width: '100%' }}
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(212, 168, 39, 0.1)',
+                  border: '1px solid rgba(212, 168, 39, 0.2)',
+                  marginBottom: 20,
+                }}
+              >
+                <Wand2 size={24} style={{ color: '#d4a827' }} />
               </div>
-              <div className="w-full mb-4">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
-                  <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%`, backgroundColor: '#eab308', boxShadow: '0 0 12px rgba(234,179,8,0.3)' }} />
-                </div>
+              <div
+                className="w-full"
+                style={{
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: '#1e1e22',
+                  marginBottom: 16,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${progress}%`,
+                    backgroundColor: '#d4a827',
+                    borderRadius: 3,
+                    transition: 'width 0.3s ease',
+                  }}
+                />
               </div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <span className="text-base">{STEPS[idx].icon}</span>
-                <p className="text-[13px] font-medium" style={{ color: '#f0f0f0' }}>{STEPS[idx].text}</p>
-              </div>
-              <p className="text-[11px]" style={{ color: '#606070' }}>This may take a few seconds...</p>
+              <p
+                className="font-semibold"
+                style={{ fontSize: 14, color: '#e8e6e0', marginBottom: 4 }}
+              >
+                {LOADING_STEPS[stepIdx]}
+              </p>
+              <p style={{ fontSize: 12, color: '#5a5a62' }}>
+                {progress}% complete
+              </p>
             </div>
           ) : result ? (
-            <div className="w-full h-full relative group">
-              <img src={result} alt="" className="w-full h-full object-contain" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                <button onClick={onDownload} className="px-4 py-2 rounded-xl flex items-center gap-2 text-[12px] font-bold transition-all hover:scale-105 active:scale-95"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.75)', color: '#f0f0f0', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <Download size={14} /> Download
+            <>
+              <img
+                src={result}
+                alt="Generated thumbnail"
+                className="w-full h-full"
+                style={{ objectFit: 'contain' }}
+              />
+              <div
+                className="absolute flex"
+                style={{ top: 12, right: 12, gap: 6 }}
+              >
+                <button
+                  onClick={onDownload}
+                  className="flex items-center gap-1.5 font-semibold transition-colors"
+                  style={{
+                    fontSize: 12,
+                    paddingTop: 7,
+                    paddingBottom: 7,
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    borderRadius: 7,
+                    backgroundColor: 'rgba(13, 13, 15, 0.85)',
+                    color: '#e8e6e0',
+                    border: '1px solid #2a2a2e',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(13, 13, 15, 1)';
+                    e.currentTarget.style.borderColor = '#d4a827';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(13, 13, 15, 0.85)';
+                    e.currentTarget.style.borderColor = '#2a2a2e';
+                  }}
+                >
+                  <Download size={13} />
+                  Download
                 </button>
-                <button onClick={onRedo} className="px-4 py-2 rounded-xl flex items-center gap-2 text-[12px] font-bold transition-all hover:scale-105 active:scale-95"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.75)', color: '#f0f0f0', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <RotateCcw size={14} /> Redo
+                <button
+                  onClick={onRedo}
+                  className="flex items-center gap-1.5 font-semibold transition-colors"
+                  style={{
+                    fontSize: 12,
+                    paddingTop: 7,
+                    paddingBottom: 7,
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    borderRadius: 7,
+                    backgroundColor: 'rgba(13, 13, 15, 0.85)',
+                    color: '#e8e6e0',
+                    border: '1px solid #2a2a2e',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(13, 13, 15, 1)';
+                    e.currentTarget.style.borderColor = '#d4a827';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(13, 13, 15, 0.85)';
+                    e.currentTarget.style.borderColor = '#2a2a2e';
+                  }}
+                >
+                  <RotateCcw size={13} />
+                  Redo
                 </button>
               </div>
-              <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <span className="px-3 py-1.5 rounded-lg text-[9px] font-medium" style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#808090', backdropFilter: 'blur(8px)' }}>AI Generated</span>
-              </div>
-            </div>
+            </>
           ) : (
-            <div className="flex flex-col items-center text-center animate-in fade-in duration-700">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 hover:scale-105 cursor-default"
-                style={{ backgroundColor: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.08)' }}>
-                <Sparkles size={26} className="text-[#eab308]" />
+            <div className="flex flex-col items-center text-center">
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                  backgroundColor: 'rgba(212, 168, 39, 0.08)',
+                  border: '1px solid rgba(212, 168, 39, 0.15)',
+                  marginBottom: 16,
+                }}
+              >
+                <Sparkles size={28} style={{ color: '#d4a827' }} />
               </div>
-              <h2 className="text-xl font-extrabold mb-1 tracking-tight" style={{ color: '#f0f0f0' }}>Ready to create</h2>
-              <p className="text-[12px]" style={{ color: '#808090', maxWidth: 240, lineHeight: 1.6 }}>
-                Set your options in the panel and click <span className="font-semibold text-[#eab308]">Create</span> to generate
+              <h2
+                className="font-extrabold"
+                style={{ fontSize: 20, color: '#e8e6e0', marginBottom: 6 }}
+              >
+                Ready to create
+              </h2>
+              <p style={{ fontSize: 13, color: '#9a9890', maxWidth: 280 }}>
+                Fill the panel on the left and click Create to generate your AI thumbnail
               </p>
-              <div className="flex items-center gap-2.5 mt-5">
-                {['16:9', '9:16'].map((a) => (
-                  <div key={a} className="px-2.5 py-1 rounded-lg text-[9px] font-mono" style={{ backgroundColor: 'rgba(255,255,255,0.02)', color: '#606070', border: '1px solid rgba(255,255,255,0.03)' }}>{a}</div>
-                ))}
-              </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Recent Designs */}
-      <div className="px-8 pb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(234,179,8,0.1)' }}>
-            <Sparkles size={11} className="text-[#eab308]" />
-          </div>
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.6px]" style={{ color: '#808090' }}>Recent Designs</h3>
-        </div>
-        <div className="w-full rounded-xl py-12 flex items-center justify-center" style={{ border: '1px dashed rgba(255,255,255,0.05)', backgroundColor: 'rgba(18,18,24,0.3)' }}>
-          <div className="text-center">
-            <p className="text-[13px] font-medium" style={{ color: '#606070' }}>No history yet</p>
-            <p className="text-[11px] mt-1" style={{ color: '#404048' }}>Your generated thumbnails will appear here</p>
-          </div>
         </div>
       </div>
     </div>

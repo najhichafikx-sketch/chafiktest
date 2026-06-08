@@ -4,29 +4,116 @@ import { Bell } from 'lucide-react';
 
 export default function Topbar() {
   return (
-    <div className="flex items-center justify-between px-8 shrink-0" style={{ height: 48, backgroundColor: '#0a0a0f', borderBottom: '1px solid #121218' }}>
-      <div className="flex items-center gap-4">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 ring-2 ring-purple-500/20" />
-        <button className="relative text-[#606070] hover:text-[#f0f0f0] transition-colors">
+    <div
+      className="flex items-center justify-between px-6 shrink-0"
+      style={{
+        height: 48,
+        backgroundColor: '#111114',
+        borderBottom: '1px solid #1e1e22',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, #d4a827, #e85c26)',
+            border: '1px solid #2a2a2e',
+          }}
+        />
+        <button
+          className="relative"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: 6,
+            color: '#9a9890',
+            cursor: 'pointer',
+            borderRadius: 7,
+          }}
+        >
           <Bell size={16} />
-          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#eab308]" />
         </button>
-        <button className="px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200"
-          style={{ backgroundColor: '#eab308', color: '#0a0a0f', boxShadow: '0 2px 12px rgba(234,179,8,0.2)' }}>
+        <button
+          className="font-bold transition-colors"
+          style={{
+            paddingLeft: 14,
+            paddingRight: 14,
+            paddingTop: 6,
+            paddingBottom: 6,
+            borderRadius: 8,
+            fontSize: 12,
+            backgroundColor: '#d4a827',
+            color: '#0d0d0f',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#c49a20')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#d4a827')}
+        >
           Upgrade
         </button>
-        <button className="px-4 py-1.5 rounded-full text-[11px] font-medium transition-colors"
-          style={{ color: '#808090', border: '1px solid #1a1a24' }}
-          onMouseEnter={e => e.target.style.borderColor = '#2a2a34'}
-          onMouseLeave={e => e.target.style.borderColor = '#1a1a24'}>
+        <button
+          className="font-medium transition-colors"
+          style={{
+            paddingLeft: 14,
+            paddingRight: 14,
+            paddingTop: 6,
+            paddingBottom: 6,
+            borderRadius: 8,
+            fontSize: 12,
+            backgroundColor: 'transparent',
+            color: '#9a9890',
+            border: '1px solid #2a2a2e',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#e8e6e0';
+            e.currentTarget.style.borderColor = '#5a5a62';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#9a9890';
+            e.currentTarget.style.borderColor = '#2a2a2e';
+          }}
+        >
           User guide
         </button>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[15px] font-bold tracking-tight" style={{ color: '#f0f0f0' }}>Thum</span>
-        <span className="text-[15px] font-bold text-[#eab308]">Pure</span>
-        <div className="w-4 h-4 rounded border border-[#eab308] flex items-center justify-center ml-0.5">
-          <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#eab308' }} />
+
+      <div className="flex items-center gap-1.5">
+        <span
+          className="font-extrabold tracking-tight"
+          style={{ fontSize: 16, color: '#d4a827' }}
+        >
+          Thumb
+        </span>
+        <span
+          className="font-extrabold tracking-tight"
+          style={{ fontSize: 16, color: '#e8e6e0' }}
+        >
+          Pure
+        </span>
+        <div
+          style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            backgroundColor: '#d4a827',
+            marginLeft: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 1,
+              backgroundColor: '#0d0d0f',
+            }}
+          />
         </div>
       </div>
     </div>
