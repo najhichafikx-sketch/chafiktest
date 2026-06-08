@@ -64,6 +64,7 @@ export default function BlogPage() {
           excerpt: db.excerpt || db.meta_description || st?.excerpt || '',
           reading_time: db.reading_time || st?.reading_time || 2,
           featured_image: db.featured_image || st?.featured_image || '',
+          has_image: db.has_image || false,
           _order: 1
         });
       } else {
@@ -113,7 +114,7 @@ export default function BlogPage() {
           </p>
           <div className="blog-grid">
             {filtered.map(post => {
-              const img = post.featured_image || fallbackImage(post.slug);
+              const img = post.has_image ? `/api/blog/${post.slug}/image` : (post.featured_image || fallbackImage(post.slug));
               return (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-card">
                   <div className="blog-card-image" style={{ position: 'relative', overflow: 'hidden' }}>

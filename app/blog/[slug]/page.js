@@ -150,7 +150,7 @@ export default async function BlogArticle({ params }) {
 
   const [dbPost, allDbPosts] = await Promise.all([getDbPost(slug), getAllDbPosts()]);
 
-  const featuredImage = dbPost?.featured_image || fallbackImage(post.slug);
+  const featuredImage = (dbPost?.featured_image && dbPost.featured_image.startsWith('data:') && `/api/blog/${slug}/image`) || dbPost?.featured_image || fallbackImage(post.slug);
 
   const seen = new Set();
   const mergedRelated = [];
@@ -371,7 +371,7 @@ export default async function BlogArticle({ params }) {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: 24 }}>Related Articles</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
               {relatedPosts.map(rp => {
-                const img = rp.featured_image || fallbackImage(rp.slug);
+                const img = rp.has_image ? `/api/blog/${rp.slug}/image` : (rp.featured_image || fallbackImage(rp.slug));
                 return (
                   <Link key={rp.slug} href={`/blog/${rp.slug}`} className="related-card">
                     <div className="related-card-image">
