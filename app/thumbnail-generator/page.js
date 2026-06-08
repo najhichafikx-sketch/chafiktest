@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Sparkles,
   ChevronDown,
-  Image,
+  Image as ImageIcon,
   FileText,
   UserPlus,
   Palette,
@@ -12,92 +12,81 @@ import {
   Info,
   LayoutGrid,
   Plus,
+  Copy
 } from 'lucide-react';
 
 export default function ThumbnailGeneratorPage() {
-  const [showModal, setShowModal] = useState(false);
   const [topic, setTopic] = useState('');
-  const [style, setStyle] = useState('cinematic');
-  const [faceImage, setFaceImage] = useState(null);
-  const [facePreview, setFacePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const fileRef = useRef(null);
-
-  const handleFaceUpload = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFaceImage(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setFacePreview(ev.target.result);
-    reader.readAsDataURL(file);
-  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!topic.trim()) return;
     setLoading(true);
     setResult(null);
     try {
-      const token = localStorage.getItem('user_token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch('/api/thumbnail-generator', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ topic: topic.trim(), style, faceImage: facePreview }),
-      });
-      const data = await res.json();
-      setResult(data.success ? data : { error: data.error || 'فشل التوليد' });
+      // Simulate API call for the UI
+      setTimeout(() => {
+        setResult({
+          success: true,
+          imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1280&auto=format&fit=crop',
+        });
+        setLoading(false);
+      }, 3000);
+      
+      // Actual API Integration Logic:
+      // const res = await fetch('/api/thumbnail-generator', { ... });
+      // const data = await res.json();
+      // ...
     } catch {
-      setResult({ error: 'خطأ في الشبكة' });
-    } finally {
+      setResult({ error: 'خطأ في الشبكة. لم يتم التوليد.' });
       setLoading(false);
     }
-  }, [topic, style, facePreview]);
-
-  const STYLES = [
-    { value: 'cinematic', label: 'سينمائي', emoji: '🎬' },
-    { value: 'vlog', label: 'فلوق', emoji: '🎥' },
-    { value: 'gaming', label: 'ألعاب', emoji: '🎮' },
-  ];
+  }, [topic]);
 
   return (
     <div dir="rtl" className="min-h-screen flex bg-[#0B0E14] text-white" style={{ fontFamily: "'Cairo', sans-serif" }}>
 
-      {/* ===== RIGHT SIDEBAR ===== */}
-      <aside className="w-[350px] shrink-0 bg-[#10131A] border-l border-white/5 flex flex-col h-screen overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* ===== RIGHT SIDEBAR (لوحة التحكم) ===== */}
+      <aside className="w-[340px] shrink-0 bg-[#10131A] border-l border-white/5 flex flex-col h-screen overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Header */}
-          <h2 className="text-lg font-bold">لوحة التحكم</h2>
+          <h2 className="text-xl font-bold text-white">لوحة التحكم</h2>
 
           {/* Section 1: Text Input */}
-          <div className="bg-[#1A1D24] rounded-xl p-4 space-y-3">
+          <div className="bg-[#1A1D24] border border-white/5 rounded-xl p-4 space-y-3 relative">
+            <button className="w-1/3 flex items-center gap-2 text-xs text-gray-300 bg-[#10131A] border border-white/5 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors absolute top-4 left-4">
+              <Copy size={12} className="text-gray-500" />
+              إضافة ملحقات
+            </button>
+
             <div className="flex items-center justify-between">
-              <button className="flex items-center gap-1.5 text-sm text-gray-300 bg-[#0B0E14] rounded-lg px-3 py-1.5">
+              <button className="flex items-center gap-1.5 text-sm text-gray-300 bg-[#0B0E14] rounded-lg px-3 py-1.5 border border-white/5">
                 عنوان
-                <ChevronDown size={14} />
+                <ChevronDown size={14} className="text-[#EAB308] ml-1" />
               </button>
-              <span className="text-xs text-gray-500">0/1000</span>
+              <span className="text-xs text-gray-500">{topic.length}/1000</span>
             </div>
+            
             <textarea
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="اكتب عنوان الفيديو... (استخدم @ للإشارة للصور)"
               rows={3}
-              className="w-full bg-transparent text-sm text-gray-300 placeholder-gray-600 resize-none focus:outline-none"
+              className="w-full bg-transparent text-sm text-gray-300 placeholder-gray-600 resize-none focus:outline-none mt-2"
             />
           </div>
 
           {/* Section 2: References */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <FileText size={16} className="text-gray-400" />
+              <div className="flex items-center gap-2 text-sm font-bold text-white">
+                <ImageIcon size={16} className="text-[#EAB308]" />
                 المراجع
               </div>
-              <span className="text-xs text-gray-500">0/10</span>
+              <span className="text-[10px] bg-[#1A1D24] px-2 py-0.5 rounded text-gray-400 font-mono">0/10</span>
             </div>
-            <button className="w-full border-2 border-dashed border-[#EAB308]/40 rounded-xl py-3 text-sm text-[#EAB308] flex items-center justify-center gap-2 bg-transparent hover:bg-[#EAB308]/5 transition-colors">
+            <button className="w-full border border-dashed border-[#EAB308]/40 rounded-xl py-3 text-sm text-[#EAB308] flex items-center justify-center gap-2 bg-transparent hover:bg-[#EAB308]/5 transition-colors font-medium">
               <Plus size={16} />
               إضافة مرجع (ستايل / ملحقات)
             </button>
@@ -106,53 +95,70 @@ export default function ThumbnailGeneratorPage() {
           {/* Section 3: Character & Colors */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <span className="text-xs text-gray-400 block">الشخصية</span>
-              <button className="w-full bg-[#1A1D24] rounded-xl py-8 flex flex-col items-center gap-2 text-sm text-gray-400 hover:bg-[#1A1D24]/80 transition-colors">
-                <UserPlus size={24} className="text-gray-500" />
+              <div className="flex items-center justify-end gap-1.5 text-xs text-white font-bold mb-1">
+                الشخصية
+                <UserPlus size={14} className="text-[#EAB308]" />
+              </div>
+              <button className="w-full bg-[#1A1D24] border border-white/5 rounded-xl py-3 flex items-center justify-center gap-2 text-sm text-gray-400 hover:bg-[#1A1D24]/80 transition-colors">
+                <UserPlus size={16} />
                 إضافة شخصية
               </button>
             </div>
             <div className="space-y-2">
-              <span className="text-xs text-gray-400 block">الألوان</span>
-              <button className="w-full bg-[#1A1D24] rounded-xl py-8 flex flex-col items-center gap-2 text-sm text-gray-400 hover:bg-[#1A1D24]/80 transition-colors">
-                <Palette size={24} className="text-gray-500" />
+              <div className="flex items-center justify-end gap-1.5 text-xs text-white font-bold mb-1">
+                الألوان
+                <Palette size={14} className="text-[#EAB308]" />
+              </div>
+              <button className="w-full bg-[#1A1D24] border border-white/5 rounded-xl py-3 flex items-center justify-center gap-2 text-sm text-gray-400 hover:bg-[#1A1D24]/80 transition-colors">
+                <Palette size={16} />
                 إضافة ألوان
               </button>
             </div>
           </div>
 
           {/* Section 4: Settings */}
-          <div className="space-y-4">
-            <div>
-              <span className="text-xs text-gray-400 block mb-2">الموديل</span>
-              <button className="flex items-center gap-1.5 text-sm text-gray-300 bg-[#1A1D24] rounded-lg px-3 py-1.5">
-                ThumPure SDXL
-                <ChevronDown size={14} />
+          <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
+             <div>
+              <span className="text-xs text-white font-bold block mb-2 flex items-center justify-between">
+                <ChevronDown size={14} className="text-gray-500" />
+                الموديل
+              </span>
+              <button className="w-full flex items-center justify-center text-sm text-white font-bold bg-[#1A1D24] border border-white/5 rounded-lg py-2">
+                Basic
               </button>
             </div>
             <div>
-              <span className="text-xs text-gray-400 block mb-2">الأبعاد</span>
-              <div className="flex gap-2">
-                <button className="bg-[#1A1D24] rounded-lg px-3 py-1.5 text-xs text-gray-500">1:1</button>
-                <button className="bg-[#EAB308] rounded-lg px-3 py-1.5 text-xs text-black font-semibold">16:9</button>
-                <button className="bg-[#1A1D24] rounded-lg px-3 py-1.5 text-xs text-gray-500">9:16</button>
-                <button className="bg-[#1A1D24] rounded-lg px-3 py-1.5 text-xs text-gray-500">4:5</button>
+              <span className="text-xs text-white font-bold block mb-2 flex items-center justify-between">
+                <ChevronDown size={14} className="text-[#EAB308]" />
+                الأبعاد
+              </span>
+              <div className="flex gap-1 justify-end">
+                <button className="bg-[#EAB308] rounded-lg px-2 py-1.5 text-xs text-black font-bold flex items-center gap-1 relative">
+                  <span className="absolute -top-2 -right-2 text-[8px] bg-red-600 text-white px-1 rounded shadow-sm">NEW</span>
+                  16:9
+                </button>
+                <button className="bg-[#1A1D24] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-gray-400">9:16</button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Fixed bottom action */}
-        <div className="p-6 border-t border-white/5 space-y-3">
-          <p className="text-sm text-gray-400 text-center">
-            التكلفة المقدرة: <span className="text-[#EAB308] font-semibold">20 نقطة</span>
-          </p>
+        <div className="p-5 border-t border-white/5 space-y-3 bg-[#10131A]">
+          <div className="flex items-center justify-between text-sm px-1">
+            <span className="text-[#EAB308] font-bold text-lg">20 <span className="text-gray-500 font-normal text-xs">نقطة</span></span>
+            <span className="text-gray-400 text-xs font-medium">التكلفة المقدرة</span>
+          </div>
           <button
-            onClick={() => setShowModal(true)}
-            className="w-full bg-[#EAB308] hover:bg-[#EAB308]/90 text-black font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all"
+            onClick={handleGenerate}
+            disabled={loading || !topic.trim()}
+            className="w-full bg-[#EAB308] disabled:bg-[#1A1D24] disabled:text-gray-600 hover:bg-[#FACC15] text-black font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg disabled:shadow-none"
           >
-            <Sparkles size={18} />
-            إنشاء
+             {loading ? (
+                <span className="inline-block w-5 h-5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+             ) : (
+               <>إنشاء <Plus size={18} /></>
+             )}
           </button>
         </div>
       </aside>
@@ -161,200 +167,90 @@ export default function ThumbnailGeneratorPage() {
       <main className="flex-1 flex flex-col bg-[#0B0E14] min-h-screen overflow-y-auto">
 
         {/* Top Navbar */}
-        <nav className="flex items-center justify-between p-6 border-b border-white/5">
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#EAB308] rounded-lg flex items-center justify-center">
-              <span className="text-black font-bold text-sm">T</span>
+        <nav className="flex items-center justify-between px-8 py-5">
+          {/* Right side (Logo) */}
+          <div className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xl font-bold text-white tracking-tight">ThumPure</span>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center border-2 border-[#EAB308]">
+              <div className="w-2.5 h-2.5 bg-[#EAB308] rounded-[2px]"></div>
             </div>
-            <span className="text-lg font-bold">ThumPure</span>
           </div>
+          
           {/* Left side */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#EAB308] to-[#EAB308]/50 p-0.5">
-              <div className="w-full h-full rounded-full bg-[#1A1D24] flex items-center justify-center text-sm font-bold text-white">
-                N
-              </div>
-            </div>
-            <button className="relative text-gray-400 hover:text-white transition-colors">
-              <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <button className="bg-white text-black text-sm font-semibold rounded-xl px-4 py-2 hover:bg-white/90 transition-colors">
-              ترقية
-            </button>
-            <button className="bg-[#1A1D24] text-gray-300 text-sm rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-[#1A1D24]/80 transition-colors">
-              <Info size={16} />
+          <div className="flex items-center gap-5">
+            <button className="bg-[#1A1D24] text-gray-300 text-sm font-medium rounded-full px-5 py-2 flex items-center gap-2 hover:bg-white/5 transition-colors border border-white/5">
+              <Info size={16} className="text-[#EAB308]" />
               دليل الاستخدام
             </button>
+            <button className="bg-white text-black text-sm font-bold rounded-full px-6 py-2 hover:bg-gray-200 transition-colors">
+              ترقية
+            </button>
+            <button className="relative text-gray-400 hover:text-white transition-colors p-1">
+              <Bell size={20} />
+            </button>
+            <div className="w-9 h-9 rounded-full bg-[#1A1D24] border-2 border-[#EAB308] overflow-hidden p-[2px] cursor-pointer">
+               <div className="w-full h-full rounded-full bg-gradient-to-tr from-purple-600 to-pink-500">
+                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
+               </div>
+            </div>
           </div>
         </nav>
 
         {/* Center Canvas */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <div className="w-full max-w-4xl bg-[#10131A] border border-white/5 rounded-2xl flex flex-col items-center justify-center py-24 px-8">
-            <div className="w-16 h-16 bg-[#1A1D24] rounded-2xl flex items-center justify-center mb-6 relative">
-              <Sparkles size={28} className="text-[#EAB308]" />
-              <div className="absolute inset-0 rounded-2xl bg-[#EAB308]/5 blur-xl"></div>
-            </div>
-            <h1 className="text-2xl font-bold mb-2">جاهز للإبداع</h1>
-            <p className="text-gray-500 text-sm text-center max-w-md">
-              قم بضبط الإعدادات على اليمين لإنشاء الصورة المصغرة التالية.
-            </p>
+          <div className="w-full max-w-5xl aspect-video bg-[#10131A] border border-white/5 rounded-[2rem] flex flex-col items-center justify-center relative overflow-hidden shadow-2xl transition-all duration-500">
+            {loading ? (
+               <div className="flex flex-col items-center animate-pulse">
+                  <div className="w-16 h-16 border-4 border-[#1A1D24] border-t-[#EAB308] rounded-full animate-spin mb-6"></div>
+                  <h2 className="text-2xl font-bold text-white tracking-wide">جاري الإبداع...</h2>
+                  <p className="text-gray-500 mt-2 text-sm">نستخدم سحر الذكاء الاصطناعي لإنشاء صورتك المصغرة</p>
+               </div>
+            ) : result && result.success === false ? (
+               <div className="text-center">
+                 <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span className="text-red-500 text-3xl">❌</span>
+                 </div>
+                 <h2 className="text-2xl font-bold text-white mb-2">فشل التوليد</h2>
+                 <p className="text-gray-500 text-sm">{result.error}</p>
+               </div>
+            ) : result && result.success ? (
+               <div className="w-full h-full p-6 animate-in fade-in zoom-in duration-500">
+                 <div className="w-full h-full rounded-2xl overflow-hidden border border-white/10 relative group bg-[#0B0E14]">
+                   <img src={result.imageUrl} alt="Generated Thumbnail" className="w-full h-full object-contain" />
+                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
+                     <button className="bg-[#EAB308] hover:bg-[#FACC15] text-black font-bold px-8 py-3 rounded-xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2 shadow-xl">
+                       تحميل الصورة <ImageIcon size={18} />
+                     </button>
+                   </div>
+                 </div>
+               </div>
+            ) : (
+              <div className="flex flex-col items-center text-center animate-in fade-in duration-1000">
+                <div className="w-20 h-20 bg-[#1A1D24] rounded-[1.5rem] flex items-center justify-center mb-8 shadow-inner border border-white/5 relative group cursor-pointer hover:border-[#EAB308]/30 transition-colors">
+                  <Sparkles size={32} className="text-[#EAB308] group-hover:scale-110 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-[#EAB308]/5 rounded-[1.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <h1 className="text-3xl font-bold mb-4 text-white tracking-tight">جاهز للإبداع</h1>
+                <p className="text-gray-500 text-sm max-w-[280px] leading-relaxed">
+                  قم بضبط الإعدادات على اليمين لإنشاء الصورة المصغرة التالية.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Bottom: Latest Designs */}
-        <div className="px-8 pb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <LayoutGrid size={18} className="text-gray-400" />
-            <h3 className="text-sm font-semibold">أحدث التصاميم</h3>
+        <div className="px-8 pb-8 max-w-5xl mx-auto w-full">
+          <div className="flex items-center gap-2 mb-4 justify-end">
+            <h3 className="text-sm font-bold text-white">أحدث التصاميم</h3>
+            <LayoutGrid size={16} className="text-[#EAB308]" />
           </div>
-          <div className="w-full border-2 border-dashed border-white/10 rounded-2xl py-12 flex items-center justify-center">
-            <p className="text-gray-600 text-sm">لا يوجد سجل بعد، ابدأ الإبداع الآن!</p>
+          <div className="w-full border border-dashed border-white/10 bg-[#10131A]/30 rounded-2xl py-14 flex items-center justify-center transition-colors hover:bg-[#10131A]/50 cursor-pointer">
+            <p className="text-gray-600 text-sm font-medium">لا يوجد سجل بعد، ابدأ الإبداع الآن!</p>
           </div>
         </div>
       </main>
 
-      {/* ===== MODAL ===== */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(12px)',
-        }}>
-          <div className="relative w-full max-w-lg rounded-3xl overflow-hidden" style={{
-            background: '#10131A',
-            border: '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-          }}>
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">🖼️</span>
-                <h3 className="text-lg font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>مصمم الصور المصغرة</h3>
-              </div>
-              <button onClick={() => { setShowModal(false); setResult(null); }}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-colors"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#94a3b8' }}>
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>موضوع الفيديو</label>
-                <textarea value={topic} onChange={e => setTopic(e.target.value)} rows={2}
-                  placeholder="مثال: مراجعة آيفون 16 برو"
-                  className="w-full rounded-2xl px-4 py-3 text-sm resize-none transition-all focus:outline-none"
-                  style={{
-                    background: '#0B0E14',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#f8fafc',
-                    fontFamily: "'Cairo', sans-serif",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>النمط البصري</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {STYLES.map(s => (
-                    <button key={s.value} onClick={() => setStyle(s.value)}
-                      className="py-3 rounded-2xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-1"
-                      style={style === s.value ? {
-                        background: 'rgba(234,179,8,0.1)',
-                        border: '1px solid rgba(234,179,8,0.3)',
-                        color: '#EAB308',
-                      } : {
-                        background: '#0B0E14',
-                        border: '1px solid rgba(255,255,255,0.04)',
-                        color: '#64748b',
-                      }}>
-                      <span className="text-lg">{s.emoji}</span>
-                      <span>{s.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#94a3b8' }}>صورة مرجعية للشخصية (اختياري)</label>
-                <button onClick={() => fileRef.current?.click()}
-                  className="w-full rounded-2xl p-4 text-center border-2 border-dashed transition-all duration-200"
-                  style={{
-                    borderColor: facePreview ? 'rgba(234,179,8,0.2)' : 'rgba(255,255,255,0.06)',
-                    background: facePreview ? 'rgba(234,179,8,0.03)' : 'transparent',
-                  }}>
-                  {facePreview ? (
-                    <div className="flex items-center gap-3 justify-center">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(234,179,8,0.2)' }}>
-                        <img src={facePreview} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <span className="text-sm" style={{ color: '#94a3b8' }}>تم الرفع — اضغط للتغيير</span>
-                    </div>
-                  ) : (
-                    <div className="text-sm" style={{ color: '#64748b' }}>
-                      <span className="text-2xl block mb-1">📷</span>
-                      اضغط لرفع صورة الوجه
-                    </div>
-                  )}
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFaceUpload} />
-              </div>
-
-              <button onClick={handleGenerate} disabled={loading || !topic.trim()}
-                className="w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-300 flex items-center justify-center gap-2"
-                style={loading || !topic.trim() ? {
-                  background: 'rgba(234,179,8,0.08)',
-                  color: '#64748b',
-                  cursor: 'not-allowed',
-                } : {
-                  background: '#EAB308',
-                  color: '#000000',
-                  boxShadow: '0 4px 20px rgba(234,179,8,0.2)',
-                }}>
-                {loading ? (
-                  <>
-                    <span className="inline-block w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{
-                      borderColor: '#000000 transparent transparent transparent',
-                    }} />
-                    جاري التوليد...
-                  </>
-                ) : 'توليد الصورة المصغرة'}
-              </button>
-
-              {result && (
-                <div className="rounded-2xl p-5" style={{
-                  background: '#0B0E14',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                }}>
-                  {result.error ? (
-                    <div className="flex items-center gap-2 text-sm" style={{ color: '#ef4444' }}>
-                      <span>❌</span>
-                      <span>{result.error}</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#10b981' }}>
-                        <span>✅</span>
-                        <span>تم التوليد بنجاح</span>
-                      </div>
-                      <div className="text-sm leading-relaxed p-4 rounded-xl" style={{
-                        background: '#10131A',
-                        color: '#94a3b8',
-                        border: '1px solid rgba(255,255,255,0.03)',
-                        direction: 'ltr',
-                        textAlign: 'left',
-                      }}>
-                        {result.prompt}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
