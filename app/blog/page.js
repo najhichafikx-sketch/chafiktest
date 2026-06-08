@@ -115,7 +115,7 @@ export default function BlogPage() {
           </p>
           <div className="blog-grid">
             {filtered.map(post => {
-              const img = `/api/blog/${post.slug}/image`;
+              const img = `/api/blog/${post.slug}/image.png`;
               return (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-card">
                   <div className="blog-card-image" style={{ position: 'relative', overflow: 'hidden' }}>

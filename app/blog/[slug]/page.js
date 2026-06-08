@@ -155,7 +155,7 @@ export default async function BlogArticle({ params }) {
   const isFileImg = dbPost?.featured_image && dbPost.featured_image.startsWith('/uploads/');
   const ver = dbPost?.updated_at || dbPost?.published_at || dbPost?.created_at || '';
   const imgVer = ver ? '?v=' + (typeof ver === 'string' ? ver.replace(/[^0-9]/g, '').slice(0, 14) : String(Date.now())) : '';
-  const featuredImage = isBase64Img ? `/api/blog/${slug}/image${imgVer}` : (isFileImg ? dbPost.featured_image : (dbPost?.featured_image || fallbackImage(post.slug)));
+  const featuredImage = isBase64Img ? `/api/blog/${slug}/image.png${imgVer}` : (isFileImg ? dbPost.featured_image : (dbPost?.featured_image || fallbackImage(post.slug)));
 
   const seen = new Set();
   const mergedRelated = [];
@@ -356,7 +356,7 @@ export default async function BlogArticle({ params }) {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: 24 }}>Related Articles</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
               {relatedPosts.map(rp => {
-                const img = `/api/blog/${rp.slug}/image`;
+                const img = `/api/blog/${rp.slug}/image.png`;
                 return (
                   <Link key={rp.slug} href={`/blog/${rp.slug}`} className="related-card">
                     <div className="related-card-image">
