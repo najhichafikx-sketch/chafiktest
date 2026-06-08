@@ -29,10 +29,12 @@ export default function BlogPage() {
     (async () => {
       try {
         const res = await fetch('/api/blog', { cache: 'no-store' });
-        const data = await res.json();
-        if (!cancelled && data?.success && Array.isArray(data.posts)) {
-          const published = data.posts.filter(p => p.status === 'published');
-          setDbPosts(published);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && Array.isArray(data?.posts)) {
+            const published = data.posts.filter(p => p.status === 'published');
+            setDbPosts(published);
+          }
         }
       } catch {}
     })();
@@ -45,7 +47,7 @@ export default function BlogPage() {
     for (const p of STATIC_POSTS) {
       if (!seen.has(p.slug)) {
         seen.add(p.slug);
-        merged.push(p);
+        merged.push({ ...p, _order: 0 });
       }
     }
     for (const p of dbPosts) {
@@ -57,11 +59,15 @@ export default function BlogPage() {
           category: p.category || 'General',
           excerpt: p.excerpt || p.meta_description || '',
           reading_time: p.reading_time || 2,
-          featured_image: p.featured_image || ''
+          featured_image: p.featured_image || '',
+          _order: 1
         });
       }
     }
-    return merged.sort((a, b) => a.title.localeCompare(b.title));
+    return merged.sort((a, b) => {
+      if (a._order !== b._order) return b._order - a._order;
+      return a.title.localeCompare(b.title);
+    });
   }, [dbPosts]);
 
   const filtered = allPosts.filter(p => {

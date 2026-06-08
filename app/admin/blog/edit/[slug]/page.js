@@ -115,17 +115,23 @@ export default function EditBlogPost() {
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
+  const toSlug = (s) => {
+    let slug = s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug) slug = 'article-' + Date.now();
+    return slug;
+  };
+
   const handleTitle = (val) => {
     setForm(f => ({
       ...f, title: val,
-      slug: isNew && (!f.slug || f.slug === f.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''))
-        ? val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      slug: isNew && (!f.slug || f.slug === toSlug(f.title || ''))
+        ? toSlug(val)
         : f.slug
     }));
   };
 
   const handleSlugEdit = (val) => {
-    set('slug', val.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/(^-|-$)/g, ''));
+    set('slug', val.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/(^-|-$)/g, '') || 'article-' + Date.now());
   };
 
   const toggleChip = (chip) => {
@@ -231,6 +237,7 @@ export default function EditBlogPost() {
     e.preventDefault();
     const errs = {};
     if (!form.title.trim()) errs.title = 'Title is required';
+    if (!form.slug.trim()) errs.slug = 'Slug is required';
     if (!form.content.trim()) errs.content = 'Content is required';
     setErrors(errs);
     if (Object.keys(errs).length) return;
