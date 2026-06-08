@@ -5,14 +5,11 @@ import HeroBanner from '@/components/dashboard/HeroBanner';
 import Topbar from '@/components/dashboard/Topbar';
 import Sidebar from '@/components/dashboard/Sidebar';
 import CanvasPreview from '@/components/dashboard/CanvasPreview';
-import RecentDesigns from '@/components/dashboard/RecentDesigns';
 import { useGenerate } from '@/hooks/useGenerate';
-import { useHistory } from '@/hooks/useHistory';
 import { MODEL_COSTS } from '@/lib/stripe';
 
 export default function DashboardPage() {
   const [title, setTitle] = useState('');
-  const [style, setStyle] = useState('cinematic');
   const [model, setModel] = useState('basic');
   const [dimension, setDimension] = useState('16:9');
   const [personImage, setPersonImage] = useState(null);
@@ -20,14 +17,12 @@ export default function DashboardPage() {
   const [colors, setColors] = useState([]);
 
   const { loading, result, progress, generate, reset } = useGenerate();
-  const { designs, refetch } = useHistory();
   const estimatedCost = MODEL_COSTS[model] || MODEL_COSTS.basic;
 
   const handleGenerate = useCallback(async () => {
     if (!title.trim() || loading) return;
-    await generate({ title, style, dimension, model, personImage, references });
-    refetch();
-  }, [title, style, dimension, model, personImage, references, loading, generate, refetch]);
+    await generate({ title, dimension, model, personImage, references });
+  }, [title, dimension, model, personImage, references, loading, generate]);
 
   const handleDownload = useCallback(() => {
     if (!result) return;
@@ -38,7 +33,7 @@ export default function DashboardPage() {
   }, [result]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0d0d0f', color: '#e8e6e0' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0a0f', color: '#f0f0f0' }}>
       <HeroBanner />
       <Topbar />
       <div className="flex flex-1 overflow-hidden">
@@ -51,13 +46,10 @@ export default function DashboardPage() {
           dimension={dimension} onDimensionChange={setDimension}
           onGenerate={handleGenerate} loading={loading} estimatedCost={estimatedCost}
         />
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <CanvasPreview
-            loading={loading} result={result}
-            onDownload={handleDownload} onRedo={reset} progress={progress}
-          />
-          {!loading && <RecentDesigns designs={designs} />}
-        </div>
+        <CanvasPreview
+          loading={loading} result={result}
+          onDownload={handleDownload} onRedo={reset} progress={progress}
+        />
       </div>
     </div>
   );
