@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const [references, setReferences] = useState([]);
   const [colors, setColors] = useState([]);
 
-  const { loading, result, progress, generate, reset } = useGenerate();
+  const { loading, result, error, progress, generate, reset } = useGenerate();
   const { designs, refetch } = useHistory();
   const estimatedCost = MODEL_COSTS[model] || MODEL_COSTS.basic;
 
@@ -38,12 +38,15 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: '#0d0d0f', color: '#e8e6e0' }}
+      className="flex flex-col"
+      style={{ backgroundColor: '#0d0d0f', color: '#e8e6e0', minHeight: '100vh' }}
     >
       <HeroBanner />
       <Topbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div
+        className="flex flex-1"
+        style={{ minHeight: 700 }}
+      >
         <Sidebar
           title={title} onTitleChange={setTitle}
           references={references} onReferencesChange={setReferences}
@@ -55,7 +58,7 @@ export default function DashboardPage() {
         />
         <div className="flex-1 flex flex-col overflow-hidden">
           <CanvasPreview
-            loading={loading} result={result}
+            loading={loading} result={result} error={error}
             onDownload={handleDownload} onRedo={reset} progress={progress}
             dimension={dimension}
           />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Download, RotateCcw, Wand2 } from 'lucide-react';
+import { Sparkles, Download, RotateCcw, Wand2, AlertCircle } from 'lucide-react';
 
 const LOADING_STEPS = [
   'Generating background...',
@@ -11,7 +11,7 @@ const LOADING_STEPS = [
   'Final touches...',
 ];
 
-export default function CanvasPreview({ loading, result, onDownload, onRedo, progress, dimension = '16:9' }) {
+export default function CanvasPreview({ loading, result, error, onDownload, onRedo, progress, dimension = '16:9' }) {
   const [stepIdx, setStepIdx] = useState(0);
   const timerRef = useRef(null);
 
@@ -41,13 +41,15 @@ export default function CanvasPreview({ loading, result, onDownload, onRedo, pro
     >
       <div
         className="flex-1 flex items-center justify-center"
-        style={{ padding: 32, minHeight: 400 }}
+        style={{ padding: 32, minHeight: 460 }}
       >
         <div
           className="relative w-full flex items-center justify-center"
           style={{
-            maxWidth: isVertical ? 360 : 800,
+            maxWidth: isVertical ? 360 : 820,
+            width: '100%',
             aspectRatio: isVertical ? '9 / 16' : '16 / 9',
+            maxHeight: 'calc(100vh - 480px)',
             backgroundColor: '#111114',
             border: '1px solid #1e1e22',
             borderRadius: 12,
@@ -101,6 +103,60 @@ export default function CanvasPreview({ loading, result, onDownload, onRedo, pro
               <p style={{ fontSize: 12, color: '#5a5a62' }}>
                 {progress}% complete
               </p>
+            </div>
+          ) : error ? (
+            <div
+              className="flex flex-col items-center text-center"
+              style={{ padding: 32, maxWidth: 360 }}
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  marginBottom: 16,
+                }}
+              >
+                <AlertCircle size={26} style={{ color: '#ef4444' }} />
+              </div>
+              <h3
+                className="font-extrabold"
+                style={{ fontSize: 16, color: '#e8e6e0', marginBottom: 6 }}
+              >
+                Generation failed
+              </h3>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: '#9a9890',
+                  marginBottom: 16,
+                  lineHeight: 1.5,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {error}
+              </p>
+              <button
+                onClick={onRedo}
+                className="font-bold transition-colors"
+                style={{
+                  fontSize: 12,
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  borderRadius: 7,
+                  backgroundColor: '#1e1e22',
+                  color: '#e8e6e0',
+                  border: '1px solid #2a2a2e',
+                  cursor: 'pointer',
+                }}
+              >
+                Try again
+              </button>
             </div>
           ) : result ? (
             <>
@@ -173,7 +229,7 @@ export default function CanvasPreview({ loading, result, onDownload, onRedo, pro
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center" style={{ padding: 24 }}>
               <div
                 className="flex items-center justify-center"
                 style={{

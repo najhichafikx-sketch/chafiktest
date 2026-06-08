@@ -8,9 +8,9 @@ import SideBanner from './ads/SideBanner';
 
 export default function ChromeWrapper({ children }) {
   const pathname = usePathname();
-  const isFullPage = pathname?.startsWith('/thumbnail-generator') || pathname?.startsWith('/dashboard');
+  const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/admin-login');
 
-  if (isFullPage) return <>{children}</>;
+  if (isAdminRoute) return <>{children}</>;
 
   return (
     <>
