@@ -42,28 +42,35 @@ export default function BlogPage() {
   }, []);
 
   const allPosts = useMemo(() => {
-    const seen = new Set();
-    const merged = [];
-    for (const p of STATIC_POSTS) {
-      if (!seen.has(p.slug)) {
-        seen.add(p.slug);
-        merged.push({ ...p, _order: 0 });
-      }
-    }
+    const staticBySlug = {};
+    for (const p of STATIC_POSTS) staticBySlug[p.slug] = p;
+
+    const dbBySlug = {};
     for (const p of dbPosts) {
-      if (p?.slug && !seen.has(p.slug)) {
-        seen.add(p.slug);
+      if (p?.slug) dbBySlug[p.slug] = p;
+    }
+
+    const allSlugs = new Set([...Object.keys(staticBySlug), ...Object.keys(dbBySlug)]);
+    const merged = [];
+
+    for (const slug of allSlugs) {
+      const db = dbBySlug[slug];
+      const st = staticBySlug[slug];
+      if (db) {
         merged.push({
-          slug: p.slug,
-          title: p.title,
-          category: p.category || 'General',
-          excerpt: p.excerpt || p.meta_description || '',
-          reading_time: p.reading_time || 2,
-          featured_image: p.featured_image || '',
+          slug: db.slug,
+          title: db.title,
+          category: db.category || st?.category || 'General',
+          excerpt: db.excerpt || db.meta_description || st?.excerpt || '',
+          reading_time: db.reading_time || st?.reading_time || 2,
+          featured_image: db.featured_image || st?.featured_image || '',
           _order: 1
         });
+      } else {
+        merged.push({ ...st, _order: 0 });
       }
     }
+
     return merged.sort((a, b) => {
       if (a._order !== b._order) return b._order - a._order;
       return a.title.localeCompare(b.title);
