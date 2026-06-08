@@ -3,6 +3,8 @@ import { query } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
+const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads', 'blog');
+
 async function findPostInFile(id) {
   try {
     const file = path.join(process.cwd(), 'data', 'blog.json');
@@ -29,22 +31,12 @@ async function ensurePostExists(id) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
        ON CONFLICT (id) DO NOTHING`,
       [
-        Number(fromFile.id) || null,
-        fromFile.slug || '',
-        fromFile.title || 'Untitled',
-        fromFile.excerpt || '',
-        fromFile.content || '',
-        fromFile.category || 'General',
-        Array.isArray(fromFile.tags) ? fromFile.tags : [],
-        fromFile.author || 'Chafiktech Ai',
-        fromFile.featured_image || '',
-        fromFile.meta_description || '',
-        fromFile.seo_title || '',
-        Array.isArray(fromFile.keywords) ? fromFile.keywords : [],
-        Number(fromFile.reading_time) || 5,
-        fromFile.status || 'published',
-        fromFile.published_at || null,
-        fromFile.created_at || null
+        Number(fromFile.id) || null, fromFile.slug || '', fromFile.title || 'Untitled',
+        fromFile.excerpt || '', fromFile.content || '', fromFile.category || 'General',
+        Array.isArray(fromFile.tags) ? fromFile.tags : [], fromFile.author || 'Chafiktech Ai',
+        fromFile.featured_image || '', fromFile.meta_description || '', fromFile.seo_title || '',
+        Array.isArray(fromFile.keywords) ? fromFile.keywords : [], Number(fromFile.reading_time) || 5,
+        fromFile.status || 'published', fromFile.published_at || null, fromFile.created_at || null
       ]
     );
     return true;
@@ -52,6 +44,16 @@ async function ensurePostExists(id) {
     console.error('ensurePostExists failed:', e.message);
     return false;
   }
+}
+
+function dataUrlToBuffer(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  const header = dataUrl.slice(0, comma);
+  const extMatch = header.match(/image\/(\w+)/);
+  const ext = extMatch ? extMatch[1].replace('jpeg', 'jpg') : 'jpg';
+  const base64 = dataUrl.slice(comma + 1);
+  const buf = Buffer.from(base64, 'base64');
+  return { buf, ext };
 }
 
 export async function POST(request, { params }) {
@@ -74,23 +76,28 @@ export async function POST(request, { params }) {
 
     const ensured = await ensurePostExists(numId);
     if (!ensured) {
-      return Response.json({ success: false, message: `Post ${id} not found in DB or file` }, { status: 404 });
+      return Response.json({ success: false, message: `Post ${id} not found` }, { status: 404 });
     }
 
-    const result = await query(
-      'UPDATE blog_posts SET featured_image = $1, updated_at = NOW() WHERE id = $2 RETURNING id, length(featured_image) AS img_len',
-      [image, numId]
+    // Save as file
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    const { buf, ext } = dataUrlToBuffer(image);
+    const filename = `${numId}_${Date.now()}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+    fs.writeFileSync(filePath, buf);
+    const publicUrl = `/uploads/blog/${filename}`;
+
+    await query(
+      'UPDATE blog_posts SET featured_image = $1, has_image = TRUE, updated_at = NOW() WHERE id = $2',
+      [publicUrl, numId]
     );
-
-    if (!result || result.length === 0) {
-      return Response.json({ success: false, message: 'Update returned 0 rows' }, { status: 500 });
-    }
 
     return Response.json({
       success: true,
-      message: 'Image saved',
+      message: 'Image saved as file',
       post_id: numId,
-      image_length: result[0]?.img_len || image.length
+      url: publicUrl,
+      size: buf.length
     });
   } catch (err) {
     return Response.json({ success: false, message: err.message || 'Failed to save image' }, { status: 500 });

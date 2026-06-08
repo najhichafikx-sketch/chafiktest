@@ -2,17 +2,17 @@ import Link from 'next/link';
 import { PLATFORM_TOOLS } from '@/lib/platforms-views-content';
 
 export const metadata = {
-  title: 'Platforms Views - YouTube & TikTok Creator Growth Suite',
-  description: 'Professional creator growth suite for YouTube and TikTok. Viral Exchange, Feedback Exchange, and Audience Test Lab tools for serious creators.',
+  title: 'Platforms Views - Credit-Powered Creator Growth & Feedback Platform',
+  description: 'Community-driven feedback platform with credit-based economy. Exchange views, get structured reviews, and test your content before publishing. Earn credits by watching, spend to promote.',
   openGraph: {
     title: 'Platforms Views - Chafiktech Ai',
-    description: 'Professional creator growth suite with Viral Exchange, Feedback Exchange, and Audience Test Lab.',
+    description: 'Self-sustaining credit economy for creators. Watch videos to earn credits, submit your content for exposure and feedback.',
     type: 'website'
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Platforms Views - Chafiktech Ai',
-    description: 'Professional creator growth suite with Viral Exchange, Feedback Exchange, and Audience Test Lab.'
+    description: 'Self-sustaining credit economy for creators. Watch videos to earn credits, submit your content for exposure and feedback.'
   }
 };
 

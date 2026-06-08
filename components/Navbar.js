@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getUserId, getCredits } from '@/lib/platforms-credits';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [pvCredits, setPvCredits] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'dark';
@@ -16,6 +18,15 @@ export default function Navbar() {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const uid = getUserId();
+    if (uid) {
+      getCredits().then(data => {
+        if (data && typeof data.credits === 'number') setPvCredits(data.credits);
+      }).catch(() => {});
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -44,6 +55,11 @@ export default function Navbar() {
             <Link href="/about" className="nav-link">About</Link>
           </div>
           <div className="nav-actions">
+            {pvCredits !== null && (
+              <Link href="/platforms-views/viral-exchange" className="nav-link" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(99,102,241,0.1)', padding: '4px 10px', borderRadius: 7 }}>
+                💳 {pvCredits}
+              </Link>
+            )}
             <button className="theme-toggle theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>

@@ -115,8 +115,7 @@ export default function BlogPage() {
           </p>
           <div className="blog-grid">
             {filtered.map(post => {
-              const ver = post.has_image && post.image_version ? `?v=${post.image_version}` : '';
-              const img = post.has_image ? `/api/blog/${post.slug}/image${ver}` : (post.featured_image || fallbackImage(post.slug));
+              const img = `/api/blog/${post.slug}/image`;
               return (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-card">
                   <div className="blog-card-image" style={{ position: 'relative', overflow: 'hidden' }}>

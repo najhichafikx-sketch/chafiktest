@@ -1,24 +1,69 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { VideoEmbed, getVideoEmbedUrl } from '@/lib/video-embed';
-import { SESSION_OPTIONS, DURATION_OPTIONS } from '@/lib/platforms-views-content';
+import { useLabPoints } from '@/hooks/useLabPoints';
 
-const STORAGE_KEY = 'pv_test_lab';
+const STORAGE_KEY = 'pv_lab_data';
+const DAILY_WATCH_KEY = 'pv_lab_daily_earn';
 
 function loadData() {
-  if (typeof window === 'undefined') return { sessions: [], hookTests: [], thumbnailBattles: [], viralScores: [], watchRooms: [] };
+  if (typeof window === 'undefined') return { submitted: [], watchHistory: [], testResults: [] };
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch {}
-  return { sessions: [], hookTests: [], thumbnailBattles: [], viralScores: [], watchRooms: [] };
+  return { submitted: [], watchHistory: [], testResults: [] };
 }
 function saveData(d) { if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
 
+function getDailyEarned() {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = localStorage.getItem(DAILY_WATCH_KEY);
+    if (!raw) return 0;
+    const { date, amount } = JSON.parse(raw);
+    if (date !== new Date().toDateString()) { localStorage.removeItem(DAILY_WATCH_KEY); return 0; }
+    return amount || 0;
+  } catch { return 0; }
+}
+function setDailyEarned(amount) {
+  localStorage.setItem(DAILY_WATCH_KEY, JSON.stringify({ date: new Date().toDateString(), amount }));
+}
+const DAILY_LIMIT = 80;
+
+/* ─── PACKAGES ─── */
+const SCREEN_PACKAGES = [
+  { screens: 4, cost: 10 },
+  { screens: 6, cost: 14 },
+  { screens: 10, cost: 20 }
+];
+
 export default function AudienceTestLabPage() {
-  const [tab, setTab] = useState('sessions');
+  const { labPoints, labSessions, labEarned, labSpent, loading, offline, refetch, earn, purchase, runTest } = useLabPoints();
+  const [tab, setTab] = useState('dashboard');
   const [data, setData] = useState(null);
-  useEffect(() => { setData(loadData()); }, []);
+  const [dailyEarned, setDailyEarnedState] = useState(0);
+  const [notif, setNotif] = useState(null);
+
+  const showNotif = useCallback((msg) => { setNotif(msg); setTimeout(() => setNotif(null), 3000); }, []);
+
+  useEffect(() => { setData(loadData()); setDailyEarnedState(getDailyEarned()); }, []);
+
   useEffect(() => { if (data) saveData(data); }, [data]);
+
+  const updateEarned = useCallback((pts) => {
+    const newTotal = getDailyEarned() + pts;
+    setDailyEarnedState(newTotal);
+    setDailyEarned(newTotal);
+  }, []);
+
+  const tabs = [
+    { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'submit', label: '📹 Submit Video' },
+    { id: 'watch', label: '👁️ Watch & Earn' },
+    { id: 'screens', label: '🖥️ Buy Screens' },
+    { id: 'test', label: '🧪 Test Video' },
+    { id: 'results', label: '📈 Results' }
+  ];
+
   if (!data) return null;
 
   return (
@@ -27,221 +72,206 @@ export default function AudienceTestLabPage() {
         <div style={{ marginBottom: 16 }}>
           <Link href="/platforms-views" style={{ color: 'var(--neon-purple)', fontSize: '0.9rem' }}>&larr; Back to Platforms Views</Link>
         </div>
+
+        {notif && (
+          <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, padding: '12px 20px', borderRadius: 10, background: 'rgba(17,17,20,0.95)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', fontSize: '0.85rem', backdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+            {notif}
+          </div>
+        )}
+
         <div className="section-header">
           <span className="section-badge">🧪 Audience Test Lab</span>
           <h1 className="section-title">Pre-Launch Video Testing</h1>
-          <p className="section-subtitle">Test audience behavior, analyze retention, compare hooks, battle thumbnails, and predict viral scores before publishing.</p>
+          <p className="section-subtitle">Earn points by watching videos, convert to test sessions, and get detailed analytics before going live.</p>
+        </div>
+
+        {/* Top Stats Bar */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 90 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>🔵 Points</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>{labPoints}</div>
+          </div>
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 90 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>🖥️ Sessions</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--accent-color)' }}>{labSessions}</div>
+          </div>
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 90 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>📹 Videos</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{data.submitted.length}</div>
+          </div>
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 90 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>🧪 Tests</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{data.testResults.length}</div>
+          </div>
+          {dailyEarned > 0 && (
+            <div className="stat-card" style={{ textAlign: 'center', minWidth: 90 }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>📅 Earned Today</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: dailyEarned >= DAILY_LIMIT ? '#f43f5e' : 'var(--neon-green)' }}>{dailyEarned}/{DAILY_LIMIT}</div>
+            </div>
+          )}
         </div>
 
         <div className="blog-categories" style={{ marginBottom: 24, flexWrap: 'wrap' }}>
-          {[
-            { id: 'sessions', label: '🎯 Test Sessions' },
-            { id: 'retention', label: '📈 Retention Analyzer' },
-            { id: 'hooks', label: '🪝 Hook Tester' },
-            { id: 'thumbnails', label: '🖼️ Thumbnail Battle' },
-            { id: 'viralscore', label: '🔥 AI Viral Score' },
-            { id: 'watchroom', label: '👁️ Watch Room' }
-          ].map(t => (
+          {tabs.map(t => (
             <span key={t.id} className={`blog-category ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</span>
           ))}
         </div>
 
-        {tab === 'sessions' && <TestSessions data={data} setData={setData} />}
-        {tab === 'retention' && <RetentionAnalyzer data={data} />}
-        {tab === 'hooks' && <HookTester data={data} setData={setData} />}
-        {tab === 'thumbnails' && <ThumbnailBattle data={data} setData={setData} />}
-        {tab === 'viralscore' && <AIViralScore data={data} setData={setData} />}
-        {tab === 'watchroom' && <WatchRoom data={data} setData={setData} />}
+        {tab === 'dashboard' && <Dashboard data={data} labPoints={labPoints} labSessions={labSessions} labEarned={labEarned} labSpent={labSpent} />}
+        {tab === 'submit' && <SubmitVideo data={data} setData={setData} showNotif={showNotif} />}
+        {tab === 'watch' && <WatchAndEarn data={data} setData={setData} earn={earn} showNotif={showNotif} dailyEarned={dailyEarned} updateEarned={updateEarned} />}
+        {tab === 'screens' && <BuyScreens labPoints={labPoints} labSessions={labSessions} purchase={purchase} showNotif={showNotif} />}
+        {tab === 'test' && <TestVideo labSessions={labSessions} runTest={runTest} data={data} setData={setData} showNotif={showNotif} />}
+        {tab === 'results' && <Results data={data} />}
       </div>
     </section>
   );
 }
 
-/* ---------- TEST SESSIONS ---------- */
-
-function TestSessionGridItem({ sessionNum, videoUrl, duration }) {
-  const [status, setStatus] = useState('playing');
-  const [timer, setTimer] = useState(duration);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) { setStatus('completed'); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
+/* ════════════════════════════════════════
+   DASHBOARD
+   ════════════════════════════════════════ */
+function Dashboard({ data, labPoints, labSessions, labEarned, labSpent }) {
   return (
-    <div className="glass-card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
-        <span style={{ fontWeight: 700, color: 'var(--neon-cyan)' }}>Session #{sessionNum}</span>
-        <span style={{
-          padding: '2px 8px', borderRadius: 999, fontSize: '0.7rem',
-          background: status === 'completed' ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-          color: status === 'completed' ? 'var(--neon-green)' : 'var(--neon-purple)'
-        }}>{status === 'completed' ? '✓ Completed' : '▶ Playing'}</span>
+    <div>
+      {/* How it Works */}
+      <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
+        <h3 style={{ marginBottom: 16 }}>How It Works</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+          {[
+            { step: '1', icon: '👁️', title: 'Watch Videos', desc: 'Browse the queue and watch other creators\' videos to earn lab points.' },
+            { step: '2', icon: '⭐', title: 'Earn Points', desc: 'Earn 4 points per minute watched. Build up your balance.' },
+            { step: '3', icon: '🖥️', title: 'Buy Screens', desc: 'Convert points to test sessions: 4/10pts, 6/14pts, or 10/20pts.' },
+            { step: '4', icon: '🧪', title: 'Test Your Video', desc: 'Submit a YouTube URL and use screens to run detailed analysis.' }
+          ].map((s, i) => (
+            <div key={i} style={{ padding: 16, borderRadius: 10, background: 'rgba(99,102,241,0.05)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: 8 }}>{s.icon}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)', fontWeight: 700, marginBottom: 4 }}>Step {s.step}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 4 }}>{s.title}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
       </div>
-      <VideoEmbed url={videoUrl} />
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-        ⏱ {timer}s / {duration}s
+
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>💰 Points Balance</div>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>{labPoints}</div>
+        </div>
+        <div className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>🖥️ Test Sessions</div>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent-color)' }}>{labSessions}</div>
+        </div>
+        <div className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>⬆️ Total Earned</div>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--neon-green)' }}>{labEarned}</div>
+        </div>
+        <div className="stat-card" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>⬇️ Total Spent</div>
+          <div style={{ fontSize: '2rem', fontWeight: 700 }}>{labSpent}</div>
+        </div>
+      </div>
+
+      {/* Activity Summary */}
+      <div className="glass-card" style={{ padding: 24 }}>
+        <h3 style={{ marginBottom: 12 }}>Account Activity</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          {[
+            { label: 'Videos Submitted', value: data.submitted.length, color: 'var(--text-primary)' },
+            { label: 'Videos Watched', value: data.watchHistory.length, color: 'var(--text-primary)' },
+            { label: 'Tests Completed', value: data.testResults.length, color: 'var(--text-primary)' }
+          ].map((s, i) => (
+            <div key={i} style={{ padding: 12, borderRadius: 8, background: 'rgba(99,102,241,0.05)', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 10, background: 'rgba(99,102,241,0.05)', fontSize: '0.85rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+          Your account is linked to this browser. <Link href="/register" style={{ color: 'var(--neon-cyan)' }}>Register here</Link> to save data across devices.
+        </div>
       </div>
     </div>
   );
 }
 
-function TestSessions({ data, setData }) {
+/* ════════════════════════════════════════
+   SUBMIT VIDEO
+   ════════════════════════════════════════ */
+function SubmitVideo({ data, setData, showNotif }) {
   const [url, setUrl] = useState('');
-  const [sessions, setSessions] = useState(4);
-  const [duration, setDuration] = useState(30);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [proxyTest, setProxyTest] = useState(false);
-  const [userAgent, setUserAgent] = useState(true);
-  const [device, setDevice] = useState('desktop');
-  const [country, setCountry] = useState('US');
-  const [browser, setBrowser] = useState('chrome');
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState('');
-  const [activeSessions, setActiveSessions] = useState(null);
+  const [title, setTitle] = useState('');
+  const [duration, setDuration] = useState(1);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const startTest = async () => {
-    setError('');
-    if (!url) { setError('Enter a video URL'); return; }
-    setRunning(true);
-    setProgress(0);
-
-    for (let i = 1; i <= sessions; i++) {
-      await new Promise(r => setTimeout(r, 800));
-      setProgress(i);
-    }
-
-    const session = {
-      id: 'SES-' + Date.now().toString(36).toUpperCase(),
-      url, sessions, duration, autoPlay, proxyTest, userAgent, device, country, browser,
-      completedAt: Date.now(),
-      results: generateRetentionData(duration)
-    };
-    setData({ ...data, sessions: [...data.sessions, session] });
-    setRunning(false);
-    setActiveSessions({ videoUrl: url, count: sessions, duration });
+  const extractVideoId = (input) => {
+    const m = input.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : input;
   };
 
-  const gridCols = activeSessions?.count <= 2 ? 2 : activeSessions?.count <= 4 ? 2 : 3;
+  const handleSubmit = async () => {
+    if (!url) return;
+    setSubmitting(true);
+    const vid = extractVideoId(url);
+    const entry = { id: 'SUB-' + Date.now().toString(36).toUpperCase(), url: vid, title: title || 'Untitled', duration: Math.max(0.5, duration), submittedAt: Date.now() };
+    setData({ ...data, submitted: [...data.submitted, entry] });
+    setUrl(''); setTitle('');
+    showNotif('Video submitted successfully!');
+    setSubmitting(false);
+  };
 
   return (
     <div>
-      {activeSessions && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: '1rem' }}>Live Test Sessions</h3>
-            <button className="btn btn-secondary btn-sm" onClick={() => { setActiveSessions(null); setUrl(''); }}>
-              {activeSessions ? 'New Test' : ''}
-            </button>
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-            gap: 16
-          }}>
-            {Array.from({ length: activeSessions.count }).map((_, i) => (
-              <TestSessionGridItem key={i} sessionNum={i + 1} videoUrl={activeSessions.videoUrl} duration={activeSessions.duration} />
-            ))}
+      <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
+        <h3 style={{ marginBottom: 12 }}>Submit a Video for Testing</h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>
+          Submit your YouTube video URL. Other users will watch it to earn points, and you can use test sessions to run detailed analysis.
+        </p>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">YouTube Video URL</label>
+          <input className="form-input" type="url" placeholder="https://youtube.com/watch?v=..." value={url} onChange={e => { setUrl(e.target.value); setPreviewUrl(extractVideoId(e.target.value)); }} />
+        </div>
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label className="form-label">Video Title (optional)</label>
+          <input className="form-input" type="text" placeholder="My Awesome Video" value={title} onChange={e => setTitle(e.target.value)} />
+        </div>
+        <div className="form-group" style={{ marginBottom: 16 }}>
+          <label className="form-label">Duration (minutes)</label>
+          <select className="form-input" value={duration} onChange={e => setDuration(parseFloat(e.target.value))}>
+            {[0.5, 1, 2, 3, 5, 8, 10, 15, 20, 30].map(m => <option key={m} value={m}>{m >= 1 ? `${m} min` : '30 sec'}</option>)}
+          </select>
+        </div>
+        <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleSubmit} disabled={submitting || !url}>
+          {submitting ? 'Submitting...' : 'Submit Video →'}
+        </button>
+      </div>
+
+      {/* Preview */}
+      {previewUrl && url && (
+        <div className="glass-card" style={{ padding: 16, marginBottom: 20 }}>
+          <h4 style={{ marginBottom: 12, fontSize: '0.9rem' }}>Preview</h4>
+          <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 10, overflow: 'hidden' }}>
+            <iframe src={`https://www.youtube.com/embed/${previewUrl}?autoplay=0&controls=1&rel=0`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: 10 }} allow="accelerometer; encrypted-media; gyroscope" allowFullScreen />
           </div>
         </div>
       )}
 
-      {running ? (
-        <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: 16 }}>⏳</div>
-          <h3 style={{ marginBottom: 12 }}>Running Test Sessions...</h3>
-          <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 12 }}>{progress}/{sessions}</div>
-          <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', height: 6, background: 'rgba(99,102,241,0.2)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ width: `${(progress / sessions) * 100}%`, height: '100%', background: 'var(--gradient-primary)', borderRadius: 3, transition: 'width 0.3s ease' }} />
-          </div>
-        </div>
-      ) : !activeSessions && (
-        <div className="glass-card" style={{ padding: 24 }}>
-          <h3 style={{ marginBottom: 16 }}>Configure Test Session</h3>
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label className="form-label">Video URL</label>
-            <input className="form-input" type="url" placeholder="https://youtube.com/watch?v=..." value={url} onChange={e => setUrl(e.target.value)} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
-            <div className="form-group">
-              <label className="form-label">Sessions</label>
-              <select className="form-input" value={sessions} onChange={e => setSessions(parseInt(e.target.value))}>
-                {SESSION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Watch Duration</label>
-              <select className="form-input" value={duration} onChange={e => setDuration(parseInt(e.target.value))}>
-                {DURATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
-            <div className="form-group">
-              <label className="form-label">Device</label>
-              <select className="form-input" value={device} onChange={e => setDevice(e.target.value)}>
-                <option value="desktop">Desktop</option>
-                <option value="mobile">Mobile</option>
-                <option value="tablet">Tablet</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Browser</label>
-              <select className="form-input" value={browser} onChange={e => setBrowser(e.target.value)}>
-                <option value="chrome">Chrome</option>
-                <option value="firefox">Firefox</option>
-                <option value="safari">Safari</option>
-                <option value="edge">Edge</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Country</label>
-              <select className="form-input" value={country} onChange={e => setCountry(e.target.value)}>
-                <option value="US">United States</option>
-                <option value="UK">United Kingdom</option>
-                <option value="CA">Canada</option>
-                <option value="AU">Australia</option>
-                <option value="IN">India</option>
-                <option value="DE">Germany</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={autoPlay} onChange={e => setAutoPlay(e.target.checked)} /> Auto Play
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={proxyTest} onChange={e => setProxyTest(e.target.checked)} /> Proxy Testing
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={userAgent} onChange={e => setUserAgent(e.target.checked)} /> User Agent Rotation
-            </label>
-          </div>
-          {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: 12 }}>{error}</p>}
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={startTest} disabled={running}>
-            Start Test ({sessions} sessions, {duration}s each)
-          </button>
-        </div>
-      )}
-
-      {data.sessions.length > 0 && !activeSessions && (
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Test History</h3>
+      {/* Submitted Videos */}
+      {data.submitted.length > 0 && (
+        <div>
+          <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Your Submitted Videos ({data.submitted.length})</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[...data.sessions].reverse().slice(0, 10).map((s, i) => (
-              <div key={i} className="glass-card" style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ fontSize: '0.85rem', wordBreak: 'break-all', flex: 1 }}>{s.url}</div>
-                <div style={{ display: 'flex', gap: 12, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                  <span>{s.sessions} sessions</span>
-                  <span>{s.duration}s</span>
-                  <span>{s.device}</span>
-                  <span style={{ color: 'var(--neon-cyan)' }}>~{Math.round(s.results.estimatedCompletion * 100)}%</span>
+            {[...data.submitted].reverse().map((v, i) => (
+              <div key={i} className="glass-card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 80, height: 45, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                  <img src={`https://img.youtube.com/vi/${v.url}/mqdefault.jpg`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.title}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{v.duration}m · {new Date(v.submittedAt).toLocaleDateString()}</div>
                 </div>
               </div>
             ))}
@@ -252,40 +282,386 @@ function TestSessions({ data, setData }) {
   );
 }
 
+/* ════════════════════════════════════════
+   WATCH & EARN
+   ════════════════════════════════════════ */
+function WatchAndEarn({ data, setData, earn, showNotif, dailyEarned, updateEarned }) {
+  const [queue, setQueue] = useState([]);
+  const [watching, setWatching] = useState(null);
+  const [timer, setTimer] = useState(0);
+  const [earned, setEarned] = useState(0);
+  const [processing, setProcessing] = useState(false);
+  const [watchDuration, setWatchDuration] = useState(30);
+  const intervalRef = useRef(null);
+  const timerActive = useRef(false);
+
+  // Build queue from submitted videos (excluding user's own)
+  useEffect(() => {
+    const otherVids = data.submitted.filter(v => !data.watchHistory.find(w => w.videoId === v.id));
+    setQueue(otherVids.length > 0 ? otherVids : []);
+  }, [data]);
+
+  const startWatching = (video) => {
+    if (dailyEarned >= DAILY_LIMIT) { showNotif('Daily earning limit reached (' + DAILY_LIMIT + ' pts). Come back tomorrow!'); return; }
+    setWatching(video);
+    setTimer(0);
+    setEarned(0);
+    timerActive.current = true;
+    intervalRef.current = setInterval(() => {
+      setTimer(prev => {
+        if (prev >= watchDuration) { clearInterval(intervalRef.current); timerActive.current = false; return prev; }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+
+  const claimReward = async () => {
+    if (processing) return;
+    setProcessing(true);
+    clearInterval(intervalRef.current);
+    timerActive.current = false;
+    const ptsEarned = Math.floor((timer / 60) * 4);
+    const finalPts = Math.max(1, ptsEarned);
+
+    await earn(finalPts);
+    setEarned(finalPts);
+    updateEarned(finalPts);
+
+    setData({ ...data, watchHistory: [...data.watchHistory, { videoId: watching.id, title: watching.title, duration: timer, earned: finalPts, date: Date.now() }] });
+    showNotif(`+${finalPts} points earned!`);
+    setWatching(null);
+    setTimer(0);
+    setProcessing(false);
+  };
+
+  const stopWatching = () => {
+    clearInterval(intervalRef.current);
+    timerActive.current = false;
+    const ptsEarned = Math.max(1, Math.floor((timer / 60) * 4));
+    if (timer >= 10) claimReward(); else { setWatching(null); setTimer(0); }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { clearInterval(intervalRef.current); };
+  }, []);
+
+  return (
+    <div>
+      {watching ? (
+        <div>
+          <div className="glass-card" style={{ padding: 24, marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>Now Watching</h3>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{watching.title}</div>
+              </div>
+              <button className="btn btn-danger btn-sm" onClick={stopWatching}>Stop</button>
+            </div>
+
+            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${watching.url}?autoplay=1&controls=1&rel=0`}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: 10 }}
+                allow="accelerometer; autoplay; encrypted-media; gyroscope"
+                allowFullScreen
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 4 }}>Watch Progress</div>
+                <div style={{ width: '100%', height: 6, background: 'rgba(99,102,241,0.15)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, (timer / watchDuration) * 100)}%`, height: '100%', background: 'var(--gradient-primary)', borderRadius: 3, transition: 'width 1s linear' }} />
+                </div>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                {timer}s / {watchDuration}s
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--neon-cyan)' }}>
+                Potential: <strong>{Math.floor((timer / 60) * 4)} points</strong>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Listen for:</span>
+                <select className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.75rem' }} value={watchDuration} onChange={e => setWatchDuration(parseInt(e.target.value))}>
+                  <option value={15}>15s</option>
+                  <option value={30}>30s</option>
+                  <option value={60}>1 min</option>
+                  <option value={120}>2 min</option>
+                  <option value={300}>5 min</option>
+                </select>
+                <button className="btn btn-primary btn-sm" onClick={claimReward} disabled={timer < 10 || processing}>Claim {Math.floor((timer / 60) * 4)} pts</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
+            <h3 style={{ marginBottom: 8 }}>Watch & Earn Points</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>
+              Watch other creators' videos to earn <strong style={{ color: 'var(--neon-cyan)' }}>4 points per minute</strong>. Points can be converted to test screens.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Watch duration:</span>
+              <select className="form-input" style={{ width: 'auto', padding: '4px 8px', fontSize: '0.8rem' }} value={watchDuration} onChange={e => setWatchDuration(parseInt(e.target.value))}>
+                <option value={15}>15 sec</option>
+                <option value={30}>30 sec</option>
+                <option value={60}>1 min (4 pts)</option>
+                <option value={120}>2 min (8 pts)</option>
+                <option value={300}>5 min (20 pts)</option>
+              </select>
+              <span style={{ fontSize: '0.75rem', color: dailyEarned >= DAILY_LIMIT ? '#f43f5e' : 'var(--text-tertiary)' }}>
+                Daily: {dailyEarned}/{DAILY_LIMIT}
+              </span>
+            </div>
+          </div>
+
+          {dailyEarned >= DAILY_LIMIT && (
+            <div className="glass-card" style={{ padding: 24, textAlign: 'center', marginBottom: 20, border: '1px solid rgba(244,63,94,0.3)' }}>
+              <p style={{ color: '#f43f5e', fontSize: '0.9rem' }}>⚠️ Daily earning limit reached ({DAILY_LIMIT} pts). Come back tomorrow!</p>
+            </div>
+          )}
+
+          {queue.length === 0 ? (
+            <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 12 }}>📭</div>
+              <h3 style={{ marginBottom: 8 }}>No Videos in Queue</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Submit a video first or wait for other creators to submit theirs.</p>
+            </div>
+          ) : (
+            <div>
+              <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Available Videos ({queue.length})</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {queue.slice(0, 20).map((v, i) => {
+                  const watched = data.watchHistory.find(w => w.videoId === v.id);
+                  return (
+                    <div key={i} className="glass-card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 80, height: 45, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={`https://img.youtube.com/vi/${v.url}/mqdefault.jpg`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.title}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{v.duration}m — ~{Math.floor(v.duration * 4)} pts potential</div>
+                      </div>
+                      <button className="btn btn-primary btn-sm" onClick={() => startWatching(v)}>Watch →</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Watch History */}
+          {data.watchHistory.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Watch History</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[...data.watchHistory].reverse().slice(0, 10).map((w, i) => (
+                  <div key={i} className="glass-card" style={{ padding: 10, display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{w.title}</span>
+                    <span style={{ color: 'var(--neon-cyan)', fontWeight: 600, marginLeft: 12 }}>+{w.earned} pts</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   BUY SCREENS
+   ════════════════════════════════════════ */
+function BuyScreens({ labPoints, labSessions, purchase, showNotif }) {
+  const [buying, setBuying] = useState(null);
+
+  const handleBuy = async (pkg) => {
+    setBuying(pkg.screens);
+    const res = await purchase(pkg.screens);
+    if (res.error) showNotif(res.error);
+    else showNotif(`Purchased ${pkg.screens} screens for ${pkg.cost} points!`);
+    setBuying(null);
+  };
+
+  return (
+    <div>
+      <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
+        <h3 style={{ marginBottom: 8 }}>Buy Test Screens</h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>
+          Convert your earned points into test screens. Each screen lets you run one analysis tool on your video.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 120 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Your Balance</div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>{labPoints}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>points</div>
+          </div>
+          <div style={{ width: 40 }} />
+          <div className="stat-card" style={{ textAlign: 'center', minWidth: 120 }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Your Screens</div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent-color)' }}>{labSessions}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>available</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+        {SCREEN_PACKAGES.map((pkg, i) => {
+          const canBuy = labPoints >= pkg.cost;
+          const saving = i === 0 ? 0 : Math.round((1 - pkg.cost / (pkg.screens * 2.5)) * 100);
+          return (
+            <div key={i} className="glass-card" style={{ padding: 24, textAlign: 'center', border: canBuy ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(100,100,120,0.15)', opacity: canBuy ? 1 : 0.5 }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🖥️</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 4 }}>{pkg.screens}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 12 }}>Test Screens</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 4 }}>{pkg.cost} points</div>
+              {saving > 0 && <div style={{ fontSize: '0.75rem', color: 'var(--neon-green)', marginBottom: 12 }}>Save {saving}% vs single</div>}
+              <button
+                className={`btn ${canBuy ? 'btn-primary' : 'btn-outline'}`}
+                style={{ width: '100%' }}
+                onClick={() => handleBuy(pkg)}
+                disabled={!canBuy || buying === pkg.screens}
+              >
+                {buying === pkg.screens ? 'Processing...' : canBuy ? 'Buy Now' : 'Need ' + (pkg.cost - labPoints) + ' more pts'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TEST VIDEO
+   ════════════════════════════════════════ */
+const TEST_TOOLS = [
+  { id: 'retention', label: '📈 Retention Analyzer', desc: 'Simulates audience retention curve with drop-off analysis' },
+  { id: 'hook', label: '🪝 Hook Tester', desc: 'Test your hook effectiveness across attention, curiosity, emotion, retention' },
+  { id: 'thumbnail', label: '🖼️ Thumbnail Battle', desc: 'Compare two thumbnails side-by-side with CTR prediction' },
+  { id: 'viralscore', label: '🔥 AI Viral Score', desc: 'Predicts viral potential across 5 key dimensions' }
+];
+
+function TestVideo({ labSessions, runTest, data, setData, showNotif }) {
+  const [selectedVideo, setSelectedVideo] = useState('');
+  const [selectedTool, setSelectedTool] = useState('');
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState(null);
+
+  // Run the selected analysis
+  const handleRun = async () => {
+    if (!selectedVideo || !selectedTool) { showNotif('Select a video and a test tool'); return; }
+    if (labSessions < 1) { showNotif('No test screens remaining. Buy more screens first.'); return; }
+    setRunning(true);
+
+    await runTest();
+
+    const video = data.submitted.find(v => v.id === selectedVideo);
+    let output;
+
+    if (selectedTool === 'retention') output = generateRetentionData(video?.duration || 1);
+    else if (selectedTool === 'hook') output = generateHookData(video?.title || '');
+    else if (selectedTool === 'thumbnail') output = generateThumbnailData();
+    else if (selectedTool === 'viralscore') output = generateViralScore();
+
+    const testResult = { id: 'TEST-' + Date.now().toString(36).toUpperCase(), videoId: selectedVideo, tool: selectedTool, output, date: Date.now() };
+    setData({ ...data, testResults: [...data.testResults, testResult] });
+    setResult(testResult);
+    setRunning(false);
+    showNotif('Test completed! 1 screen used.');
+  };
+
+  return (
+    <div>
+      {labSessions < 1 && (
+        <div className="glass-card" style={{ padding: 24, textAlign: 'center', marginBottom: 20, border: '1px solid rgba(244,63,94,0.3)' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 8 }}>🖥️</div>
+          <h3 style={{ marginBottom: 8 }}>No Test Screens Available</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 12 }}>Go to Buy Screens to convert your points into test sessions.</p>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent-color)' }}>{labSessions} screens left</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+        {TEST_TOOLS.map(t => (
+          <div key={t.id} className={`glass-card`} style={{
+            padding: 16, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
+            border: selectedTool === t.id ? '1px solid var(--neon-cyan)' : '1px solid rgba(100,100,120,0.15)'
+          }} onClick={() => setSelectedTool(t.id)}>
+            <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>{t.label.split(' ')[0]}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>{t.label}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-card" style={{ padding: 24 }}>
+        <h3 style={{ marginBottom: 12 }}>Run Test</h3>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div className="form-group" style={{ flex: 1, minWidth: 200 }}>
+            <label className="form-label">Select Video</label>
+            <select className="form-input" value={selectedVideo} onChange={e => setSelectedVideo(e.target.value)}>
+              <option value="">Choose a video...</option>
+              {data.submitted.map((v, i) => (
+                <option key={v.id} value={v.id}>{v.title || 'Video ' + (i + 1)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group" style={{ flex: 1, minWidth: 200 }}>
+            <label className="form-label">Selected Tool</label>
+            <div className="form-input" style={{ display: 'flex', alignItems: 'center', minHeight: 38, color: selectedTool ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+              {selectedTool ? TEST_TOOLS.find(t => t.id === selectedTool)?.label : 'Pick a tool above'}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Cost: <strong style={{ color: 'var(--accent-color)' }}>1 screen</strong> per test</span>
+          <button className="btn btn-primary" onClick={handleRun} disabled={running || !selectedVideo || !selectedTool || labSessions < 1}>
+            {running ? 'Running...' : `Run Test (${labSessions} screens left) →`}
+          </button>
+        </div>
+      </div>
+
+      {/* Results */}
+      {result && <TestResultDisplay result={result} />}
+    </div>
+  );
+}
+
+function TestResultDisplay({ result }) {
+  if (result.tool === 'retention') return <RetentionResult output={result.output} />;
+  if (result.tool === 'hook') return <HookResult output={result.output} />;
+  if (result.tool === 'thumbnail') return <ThumbnailResult output={result.output} />;
+  if (result.tool === 'viralscore') return <ViralScoreResult output={result.output} />;
+  return null;
+}
+
+/* ─── Retention ─── */
 function generateRetentionData(duration) {
-  const points = [];
-  let viewers = 100;
-  for (let t = 0; t <= duration; t += 5) {
+  const points = []; let viewers = 100;
+  for (let t = 0; t <= 60; t += 5) {
     if (t > 0) { const drop = Math.random() * 8 + 2; viewers = Math.max(0, viewers - drop); }
     points.push({ second: t, viewers: Math.round(viewers) });
   }
   const exitPoint = points.find(p => p.viewers < 20);
-  return {
-    curve: points,
-    estimatedCompletion: (viewers / 100),
-    dropOffZones: [{ from: 0, to: 10, drop: 100 - points[2]?.viewers || 15 }],
-    entryPoint: 0,
-    exitPoint: exitPoint?.second || duration
-  };
+  return { curve: points, estimatedCompletion: viewers / 100, dropOffZones: [{ from: 0, to: 10, drop: 100 - (points[2]?.viewers || 15) }], exitPoint: exitPoint?.second || 60 };
 }
-
-/* ---------- RETENTION ANALYZER ---------- */
-function RetentionAnalyzer({ data }) {
-  const latest = data.sessions[data.sessions.length - 1];
-  if (!latest) return <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}><p style={{ color: 'var(--text-muted)' }}>Run a test session first to see retention data.</p></div>;
-
-  const { results } = latest;
-  const maxViewers = results.curve[0]?.viewers || 100;
-  const chartH = 160;
-
+function RetentionResult({ output }) {
+  const maxV = output.curve[0]?.viewers || 100;
   return (
-    <div>
+    <div className="glass-card" style={{ padding: 24, marginTop: 20 }}>
+      <h3 style={{ marginBottom: 16 }}>📈 Retention Analysis</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
         {[
-          { label: 'Entry Point', value: `${results.entryPoint}s`, color: 'var(--neon-cyan)' },
-          { label: 'Exit Point', value: `~${results.exitPoint}s`, color: '#f43f5e' },
-          { label: 'Drop-off (0-10s)', value: `${results.dropOffZones[0]?.drop || 0}%`, color: '#f59e0b' },
-          { label: 'Est. Completion', value: `${Math.round(results.estimatedCompletion * 100)}%`, color: results.estimatedCompletion > 0.5 ? 'var(--neon-green)' : '#f43f5e' }
+          { label: 'Est. Completion', value: `${Math.round(output.estimatedCompletion * 100)}%`, color: output.estimatedCompletion > 0.5 ? 'var(--neon-green)' : '#f43f5e' },
+          { label: 'Drop-off (0-10s)', value: `${output.dropOffZones[0]?.drop || 0}%`, color: '#f59e0b' },
+          { label: 'Exit Point', value: `~${output.exitPoint}s`, color: '#f43f5e' }
         ].map((s, i) => (
           <div key={i} className="stat-card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{s.label}</div>
@@ -293,223 +669,86 @@ function RetentionAnalyzer({ data }) {
           </div>
         ))}
       </div>
-
-      <div className="glass-card" style={{ padding: 24 }}>
-        <h3 style={{ marginBottom: 16, fontSize: '1rem' }}>Retention Curve</h3>
-        <div style={{ position: 'relative', height: chartH, marginBottom: 8 }}>
-          <svg width="100%" height={chartH} viewBox={`0 0 ${results.curve.length} ${chartH}`} preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d={`M0,${chartH} ${results.curve.map((p, i) => `${i},${chartH - (p.viewers / maxViewers) * chartH}`).join(' ')} L${results.curve.length - 1},${chartH} Z`} fill="url(#retGrad)" />
-            <path d={`M0,${chartH} ${results.curve.map((p, i) => `${i},${chartH - (p.viewers / maxViewers) * chartH}`).join(' ')}`} fill="none" stroke="#6366f1" strokeWidth="2" />
-          </svg>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-          <span>0s</span><span>{latest.duration}s</span>
-        </div>
+      <div style={{ position: 'relative', height: 160, marginBottom: 8 }}>
+        <svg width="100%" height="160" viewBox={`0 0 ${output.curve.length} 160`} preserveAspectRatio="none">
+          <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" /><stop offset="100%" stopColor="#6366f1" stopOpacity="0" /></linearGradient></defs>
+          <path d={`M0,160 ${output.curve.map((p, i) => `${i},${160 - (p.viewers / maxV) * 160}`).join(' ')} L${output.curve.length - 1},160 Z`} fill="url(#rg)" />
+          <path d={`M0,160 ${output.curve.map((p, i) => `${i},${160 - (p.viewers / maxV) * 160}`).join(' ')}`} fill="none" stroke="#6366f1" strokeWidth="2" />
+        </svg>
       </div>
-
-      <div className="glass-card" style={{ padding: 24, marginTop: 16 }}>
-        <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Drop-Off Analysis</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          {results.dropOffZones[0]?.drop > 30
-            ? `⚠️ Significant drop-off detected in the first 10 seconds (${results.dropOffZones[0]?.drop}%). Consider strengthening your hook.`
-            : `✅ Good retention in the first 10 seconds. Only ${results.dropOffZones[0]?.drop}% drop-off.`}
-          {' '}Viewers start dropping significantly around <strong>{results.exitPoint}s</strong>.
-          {' '}Estimated completion rate: <strong>{Math.round(results.estimatedCompletion * 100)}%</strong>.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}><span>0s</span><span>60s</span></div>
+      <div style={{ marginTop: 16, padding: 16, borderRadius: 10, background: 'rgba(99,102,241,0.05)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        {output.dropOffZones[0]?.drop > 30
+          ? `⚠️ Significant drop-off in the first 10 seconds (${output.dropOffZones[0]?.drop}%). Strengthen your hook.`
+          : `✅ Good retention in the first 10 seconds. ${output.dropOffZones[0]?.drop}% drop-off.`}
+        {' '}Viewers drop significantly around <strong>{output.exitPoint}s</strong>.
       </div>
     </div>
   );
 }
 
-/* ---------- HOOK TESTER ---------- */
-function HookTester({ data, setData }) {
-  const [hookA, setHookA] = useState('');
-  const [hookB, setHookB] = useState('');
-  const [hookC, setHookC] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const evaluateHook = (hook) => {
-    const words = hook.split(' ').length;
-    const hasQuestion = hook.includes('?');
-    const hasNumber = /\d/.test(hook);
-    const hasEmotion = /(amazing|incredible|shocking|unbelievable|you won't believe|you need to|secret|never|worst|best|simple|easy|hate|love|destroyed|changed|forever)/i.test(hook);
-    const hasCuriosity = /(why|how|what|when|this is|the truth|actually|real reason|finally|discovered)/i.test(hook);
-    const length = hook.length;
-
-    const attention = hasNumber ? 8 : hasQuestion ? 7 : 5;
-    const curiosity = hasCuriosity ? 9 : hasQuestion ? 8 : 4;
-    const emotional = hasEmotion ? 9 : 5;
-    const retention = words < 15 ? 8 : words < 25 ? 6 : 4;
-
-    return {
-      attention: Math.min(10, attention + (words < 12 ? 1 : 0) + (length < 60 ? 1 : 0)),
-      curiosity: Math.min(10, curiosity + (hasNumber ? 1 : 0)),
-      emotional: Math.min(10, emotional + (hasQuestion ? 0.5 : 0)),
-      retention: Math.min(10, retention + (hasCuriosity ? 1 : 0)),
-      overall: Math.min(10, Math.round((attention + curiosity + emotional + retention) / 4 * 10) / 10)
-    };
+/* ─── Hook ─── */
+function generateHookData(title) {
+  const words = title.split(' ').length;
+  const hasQ = title.includes('?');
+  const hasNum = /\d/.test(title);
+  const hasEmo = /(amazing|incredible|shocking|never|best|worst|secret|easy|hate|love)/i.test(title);
+  const hasCur = /(why|how|what|truth|reason|finally|discovered)/i.test(title);
+  return {
+    scores: {
+      attention: Math.min(10, (hasNum ? 8 : hasQ ? 7 : 5) + (words < 12 ? 1 : 0)),
+      curiosity: Math.min(10, (hasCur ? 9 : hasQ ? 8 : 4) + (hasNum ? 1 : 0)),
+      emotional: Math.min(10, (hasEmo ? 9 : 5) + (hasQ ? 0.5 : 0)),
+      retention: Math.min(10, (words < 15 ? 8 : words < 25 ? 6 : 4) + (hasCur ? 1 : 0))
+    }
   };
-
-  const runTest = () => {
-    if (!hookA) return;
-    setLoading(true);
-    setTimeout(() => {
-      const hooks = [
-        { text: hookA || 'N/A', label: 'Hook A' },
-        { text: hookB || 'N/A', label: 'Hook B' },
-        { text: hookC || 'N/A', label: 'Hook C' }
-      ].filter(h => h.text !== 'N/A');
-
-      const scored = hooks.map(h => ({ ...h, scores: evaluateHook(h.text) }));
-      scored.sort((a, b) => b.scores.overall - a.scores.overall);
-      setResult(scored);
-      setData({ ...data, hookTests: [...data.hookTests, { hooks: hooks.map(h => h.text), result: scored, date: Date.now() }] });
-      setLoading(false);
-    }, 1200);
-  };
-
+}
+function HookResult({ output }) {
+  const s = output.scores; const overall = Math.round((s.attention + s.curiosity + s.emotional + s.retention) / 4 * 10) / 10;
   return (
-    <div>
-      <div className="glass-card" style={{ padding: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>Test Your Hooks</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>Enter up to 3 hooks to see which one performs best across attention, curiosity, emotional impact, and retention.</p>
-        {['A', 'B', 'C'].map((letter, i) => {
-          const val = [hookA, hookB, hookC][i];
-          const set = [setHookA, setHookB, setHookC][i];
-          return (
-            <div className="form-group" style={{ marginBottom: 12 }} key={letter}>
-              <label className="form-label">Hook {letter}</label>
-              <input className="form-input" type="text" placeholder="Enter your hook..." value={val} onChange={e => set(e.target.value)} />
-            </div>
-          );
-        })}
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={runTest} disabled={loading || !hookA}>
-          {loading ? 'Analyzing...' : 'Test Hooks →'}
-        </button>
+    <div className="glass-card" style={{ padding: 24, marginTop: 20 }}>
+      <h3 style={{ marginBottom: 12 }}>🪝 Hook Analysis</h3>
+      <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--neon-cyan)', textAlign: 'center', marginBottom: 16 }}>{overall}/10</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 12 }}>
+        {[
+          { label: 'Attention', score: s.attention }, { label: 'Curiosity', score: s.curiosity },
+          { label: 'Emotional', score: s.emotional }, { label: 'Retention', score: s.retention }
+        ].map(m => (
+          <div key={m.label} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{m.label}</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--neon-purple)' }}>{m.score}/10</div>
+          </div>
+        ))}
       </div>
-
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Results</h3>
-          {result.map((h, i) => (
-            <div key={i} className="glass-card" style={{ padding: 16, marginBottom: 12, border: i === 0 ? '1px solid var(--neon-cyan)' : 'none' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: '1.1rem', color: i === 0 ? 'var(--neon-cyan)' : 'var(--text-primary)' }}>
-                    #{i + 1} {h.label}
-                  </span>
-                  {i === 0 && <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'rgba(99,102,241,0.15)', color: 'var(--neon-cyan)', marginLeft: 8 }}>WINNER</span>}
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>{h.scores.overall}/10</div>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>"{h.text}"</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8 }}>
-                {[
-                  { label: 'Attention', score: h.scores.attention },
-                  { label: 'Curiosity', score: h.scores.curiosity },
-                  { label: 'Emotional', score: h.scores.emotional },
-                  { label: 'Retention', score: h.scores.retention }
-                ].map(m => (
-                  <div key={m.label} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{m.label}</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--neon-purple)' }}>{m.score}/10</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-/* ---------- THUMBNAIL BATTLE ---------- */
-function ThumbnailBattle({ data, setData }) {
-  const [thumbA, setThumbA] = useState('');
-  const [thumbB, setThumbB] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const analyzeThumbnail = (url) => {
-    const hasText = /[a-zA-Z]/.test(url);
-    const hasFace = url.includes('face') || url.includes('person') || url.includes('people');
-    const hasContrast = url.includes('bright') || url.includes('color') || url.includes('contrast');
-    const clarity = url.length > 30 ? 8 : url.length > 20 ? 6 : 4;
-    const ctr = hasText ? 7.5 : 5.2;
-    const attention = hasFace ? 8.5 : hasContrast ? 7.0 : 5.5;
-
-    return {
-      ctr: Math.min(10, Math.round((ctr + Math.random() * 2) * 10) / 10),
-      attention: Math.min(10, Math.round((attention + Math.random()) * 10) / 10),
-      clarity: Math.min(10, Math.round((clarity + Math.random() * 2) * 10) / 10),
-      overall: 0
-    };
-  };
-
-  const runBattle = () => {
-    if (!thumbA || !thumbB) return;
-    setLoading(true);
-    setTimeout(() => {
-      const a = analyzeThumbnail(thumbA);
-      const b = analyzeThumbnail(thumbB);
-      a.overall = Math.round((a.ctr + a.attention + a.clarity) / 3 * 10) / 10;
-      b.overall = Math.round((b.ctr + b.attention + b.clarity) / 3 * 10) / 10;
-      const battle = { thumbA, thumbB, scores: { A: a, B: b }, winner: a.overall >= b.overall ? 'A' : 'B', date: Date.now() };
-      setResult(battle);
-      setData({ ...data, thumbnailBattles: [...data.thumbnailBattles, battle] });
-      setLoading(false);
-    }, 1000);
-  };
-
+/* ─── Thumbnail ─── */
+function generateThumbnailData() {
+  const a = { ctr: Math.round((5 + Math.random() * 4) * 10) / 10, attention: Math.round((6 + Math.random() * 3) * 10) / 10, clarity: Math.round((5 + Math.random() * 4) * 10) / 10 };
+  const b = { ctr: Math.round((5 + Math.random() * 4) * 10) / 10, attention: Math.round((6 + Math.random() * 3) * 10) / 10, clarity: Math.round((5 + Math.random() * 4) * 10) / 10 };
+  a.overall = Math.round((a.ctr + a.attention + a.clarity) / 3 * 10) / 10;
+  b.overall = Math.round((b.ctr + b.attention + b.clarity) / 3 * 10) / 10;
+  return { A: a, B: b, winner: a.overall >= b.overall ? 'A' : 'B' };
+}
+function ThumbnailResult({ output }) {
   return (
-    <div>
-      <div className="glass-card" style={{ padding: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>Thumbnail Battle</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>Compare two thumbnails and see which one gets higher CTR prediction, attention score, and visual clarity.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div className="form-group">
-            <label className="form-label">Thumbnail A URL</label>
-            <input className="form-input" type="url" placeholder="https://..." value={thumbA} onChange={e => setThumbA(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Thumbnail B URL</label>
-            <input className="form-input" type="url" placeholder="https://..." value={thumbB} onChange={e => setThumbB(e.target.value)} />
-          </div>
-        </div>
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={runBattle} disabled={loading || !thumbA || !thumbB}>
-          {loading ? 'Analyzing...' : 'Battle!'}
-        </button>
+    <div className="glass-card" style={{ padding: 24, marginTop: 20 }}>
+      <h3 style={{ marginBottom: 16 }}>🖼️ Thumbnail Battle</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'center' }}>
+        <ScoreCard label="Thumbnail A" scores={output.A} isWinner={output.winner === 'A'} />
+        <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>VS</div>
+        <ScoreCard label="Thumbnail B" scores={output.B} isWinner={output.winner === 'B'} />
       </div>
-
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Battle Results</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 16, alignItems: 'center' }}>
-            <ThumbnailScoreCard label="Thumbnail A" scores={result.scores.A} isWinner={result.winner === 'A'} />
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)' }}>VS</div>
-            <ThumbnailScoreCard label="Thumbnail B" scores={result.scores.B} isWinner={result.winner === 'B'} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
-function ThumbnailScoreCard({ label, scores, isWinner }) {
+function ScoreCard({ label, scores, isWinner }) {
   return (
     <div className="glass-card" style={{ padding: 16, textAlign: 'center', border: isWinner ? '1px solid var(--neon-cyan)' : 'none' }}>
-      <h4 style={{ marginBottom: 8, color: isWinner ? 'var(--neon-cyan)' : 'var(--text-primary)' }}>
-        {label} {isWinner && '🏆'}
-      </h4>
-      <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 12 }}>{scores.overall}/10</div>
+      <h4 style={{ marginBottom: 8, color: isWinner ? 'var(--neon-cyan)' : 'var(--text-primary)' }}>{label} {isWinner && '🏆'}</h4>
+      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 12 }}>{scores.overall}/10</div>
       {[
         { label: 'CTR Prediction', score: scores.ctr },
         { label: 'Attention Score', score: scores.attention },
@@ -529,192 +768,72 @@ function ThumbnailScoreCard({ label, scores, isWinner }) {
   );
 }
 
-/* ---------- AI VIRAL SCORE ---------- */
-function AIViralScore({ data, setData }) {
-  const [url, setUrl] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const calculateViralScore = () => {
-    if (!url) return;
-    setLoading(true);
-    setTimeout(() => {
-      const hook = Math.round((5 + Math.random() * 4) * 10) / 10;
-      const retention = Math.round((4 + Math.random() * 4) * 10) / 10;
-      const engagement = Math.round((5 + Math.random() * 4) * 10) / 10;
-      const shareability = Math.round((3 + Math.random() * 5) * 10) / 10;
-      const audienceMatch = Math.round((5 + Math.random() * 4) * 10) / 10;
-      const viralScore = Math.round((hook + retention + engagement + shareability + audienceMatch) / 5 * 10) / 10;
-
-      const score = { hook, retention, engagement, shareability, audienceMatch, viralScore, url, date: Date.now() };
-      setResult(score);
-      setData({ ...data, viralScores: [...data.viralScores, score] });
-      setLoading(false);
-    }, 1500);
-  };
-
-  const getLabel = (score) => {
-    if (score >= 9) return { label: '🔥 Viral', color: '#ec4899' };
-    if (score >= 7.5) return { label: '⭐ High Potential', color: '#6366f1' };
-    if (score >= 6) return { label: '👍 Good', color: '#22c55e' };
-    if (score >= 4) return { label: '📊 Average', color: '#f59e0b' };
-    return { label: '💤 Needs Work', color: '#6b7280' };
-  };
-
+/* ─── Viral Score ─── */
+function generateViralScore() {
+  const hook = Math.round((5 + Math.random() * 4) * 10) / 10;
+  const retention = Math.round((4 + Math.random() * 4) * 10) / 10;
+  const engagement = Math.round((5 + Math.random() * 4) * 10) / 10;
+  const shareability = Math.round((3 + Math.random() * 5) * 10) / 10;
+  const audienceMatch = Math.round((5 + Math.random() * 4) * 10) / 10;
+  return { hook, retention, engagement, shareability, audienceMatch, viralScore: Math.round((hook + retention + engagement + shareability + audienceMatch) / 5 * 10) / 10 };
+}
+function ViralScoreResult({ output }) {
+  const getLabel = (s) => s >= 9 ? { label: '🔥 Viral', color: '#ec4899' } : s >= 7.5 ? { label: '⭐ High Potential', color: '#6366f1' } : s >= 6 ? { label: '👍 Good', color: '#22c55e' } : s >= 4 ? { label: '📊 Average', color: '#f59e0b' } : { label: '💤 Needs Work', color: '#6b7280' };
+  const label = getLabel(output.viralScore);
   return (
-    <div>
-      <div className="glass-card" style={{ padding: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>AI Viral Score Predictor</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: 16 }}>Our AI analyzes your content and predicts its viral potential across 5 key dimensions.</p>
-        <div className="form-group" style={{ marginBottom: 16 }}>
-          <label className="form-label">Video URL or Description</label>
-          <textarea className="form-input" rows={3} placeholder="Paste your video URL or describe your content idea..." value={url} onChange={e => setUrl(e.target.value)} />
-        </div>
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={calculateViralScore} disabled={loading || !url}>
-          {loading ? 'Analyzing...' : 'Calculate Viral Score →'}
-        </button>
+    <div className="glass-card" style={{ padding: 24, marginTop: 20 }}>
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 4 }}>Overall Viral Score</div>
+        <div style={{ fontSize: '2.5rem', fontWeight: 700, color: label.color }}>{output.viralScore}/10</div>
+        <span style={{ fontSize: '0.85rem', padding: '4px 12px', borderRadius: 999, background: `${label.color}20`, color: label.color }}>{label.label}</span>
       </div>
-
-      {result && (
-        <div className="glass-card" style={{ padding: 24, marginTop: 20 }}>
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 4 }}>Overall Viral Score</div>
-            <div style={{ fontSize: '3rem', fontWeight: 700, color: getLabel(result.viralScore).color }}>{result.viralScore}/10</div>
-            <span style={{ fontSize: '0.85rem', padding: '4px 12px', borderRadius: 999, background: `${getLabel(result.viralScore).color}20`, color: getLabel(result.viralScore).color }}>{getLabel(result.viralScore).label}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+        {[
+          { label: 'Hook Score', value: output.hook, color: '#6366f1' },
+          { label: 'Retention', value: output.retention, color: '#14b8a6' },
+          { label: 'Engagement', value: output.engagement, color: '#ec4899' },
+          { label: 'Shareability', value: output.shareability, color: '#f59e0b' },
+          { label: 'Audience Match', value: output.audienceMatch, color: '#22c55e' }
+        ].map(m => (
+          <div key={m.label} className="stat-card" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{m.label}</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: m.color }}>{m.value}</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
-            {[
-              { label: 'Hook Score', value: result.hook, color: '#6366f1' },
-              { label: 'Retention', value: result.retention, color: '#14b8a6' },
-              { label: 'Engagement', value: result.engagement, color: '#ec4899' },
-              { label: 'Shareability', value: result.shareability, color: '#f59e0b' },
-              { label: 'Audience Match', value: result.audienceMatch, color: '#22c55e' }
-            ].map(m => (
-              <div key={m.label} className="stat-card" style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{m.label}</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: m.color }}>{m.value}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 16, padding: 16, background: 'rgba(99,102,241,0.05)', borderRadius: 12, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-            {result.viralScore >= 8
-              ? '🔥 Your content has strong viral potential. The hook is compelling and engagement metrics are high. Consider optimizing your thumbnail and title for maximum CTR.'
-              : result.viralScore >= 6
-              ? '👍 Your content has good potential. Focus on strengthening the hook in the first 5 seconds and improving the shareability factor to push into viral territory.'
-              : '💪 Your content needs optimization. Work on the hook and retention strategy. Consider adding pattern interrupts, stronger emotional triggers, and a clearer value proposition.'}
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
 
-/* ---------- WATCH ROOM ---------- */
-function WatchRoom({ data, setData }) {
-  const [activeRoom, setActiveRoom] = useState(null);
-  const [roomUrl, setRoomUrl] = useState('');
-  const [roomName, setRoomName] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [msg, setMsg] = useState('');
-  const [participants, setParticipants] = useState(1);
-  const [joined, setJoined] = useState(false);
-
-  const createRoom = () => {
-    if (!roomUrl) return;
-    const id = 'ROOM-' + Date.now().toString(36).toUpperCase();
-    const room = { id, name: roomName || 'Untitled Room', url: roomUrl, createdAt: Date.now(), participants: 1 };
-    setData({ ...data, watchRooms: [...data.watchRooms, room] });
-    setActiveRoom(room);
-    setMessages([{ user: 'System', text: `Room "${room.name}" created. Share the room ID: ${id}`, time: Date.now() }]);
-    setParticipants(1);
-    setJoined(true);
-  };
-
-  const joinRoom = (room) => {
-    setActiveRoom(room);
-    setMessages([{ user: 'System', text: `You joined "${room.name}"`, time: Date.now() }]);
-    setParticipants(room.participants + 1);
-    setJoined(true);
-  };
-
-  const sendMessage = () => {
-    if (!msg.trim()) return;
-    setMessages([...messages, { user: 'You', text: msg, time: Date.now() }]);
-    setMsg('');
-  };
-
-  if (!activeRoom) {
-    return (
-      <div>
-        <div className="glass-card" style={{ padding: 24, marginBottom: 20 }}>
-          <h3 style={{ marginBottom: 16 }}>Create a Watch Room</h3>
-          <div className="form-group" style={{ marginBottom: 12 }}>
-            <label className="form-label">Room Name</label>
-            <input className="form-input" type="text" placeholder="My Watch Party" value={roomName} onChange={e => setRoomName(e.target.value)} />
-          </div>
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label className="form-label">Video URL</label>
-            <input className="form-input" type="url" placeholder="https://youtube.com/watch?v=..." value={roomUrl} onChange={e => setRoomUrl(e.target.value)} />
-          </div>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={createRoom}>Create Room</button>
-        </div>
-
-        {data.watchRooms.length > 0 && (
-          <div>
-            <h3 style={{ marginBottom: 12, fontSize: '1rem' }}>Recent Rooms</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[...data.watchRooms].reverse().slice(0, 5).map((r, i) => (
-                <div key={i} className="glass-card" style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{r.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{r.id}</div>
-                  </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => joinRoom(r)}>Join</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+/* ════════════════════════════════════════
+   RESULTS
+   ════════════════════════════════════════ */
+function Results({ data }) {
+  const { testResults, submitted } = data;
+  if (testResults.length === 0) return <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}><p style={{ color: 'var(--text-muted)' }}>No test results yet. Submit a video and run tests to see results here.</p></div>;
 
   return (
-    <div className="glass-card" style={{ padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-        <div>
-          <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{activeRoom.name}</h3>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Room: {activeRoom.id} · 👥 {participants} watching</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <a href={activeRoom.url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">Open Video</a>
-          <button className="btn btn-secondary btn-sm" onClick={() => { setActiveRoom(null); setJoined(false); }}>Leave</button>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16 }}>
-        <div className="glass-card" style={{ padding: 16, minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 8 }}>🎬</div>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Video playback area</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', wordBreak: 'break-all', marginTop: 8 }}>{activeRoom.url}</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, maxHeight: 300, overflowY: 'auto', marginBottom: 8, padding: '0 4px' }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: 'rgba(99,102,241,0.05)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--neon-cyan)', fontWeight: 600, marginBottom: 2 }}>{m.user}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{m.text}</div>
+    <div>
+      <h3 style={{ marginBottom: 16, fontSize: '1rem' }}>Test History ({testResults.length})</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {[...testResults].reverse().map((r, i) => {
+          const video = submitted.find(v => v.id === r.videoId);
+          return (
+            <div key={i} className="glass-card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{video?.title || 'Unknown Video'}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                    {r.tool === 'retention' ? '📈 Retention Analyzer' : r.tool === 'hook' ? '🪝 Hook Tester' : r.tool === 'thumbnail' ? '🖼️ Thumbnail Battle' : '🔥 AI Viral Score'}
+                    {' · '}{new Date(r.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'rgba(99,102,241,0.15)', color: 'var(--neon-cyan)' }}>{r.id}</span>
               </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input className="form-input" style={{ flex: 1 }} type="text" placeholder="Type a message..." value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} />
-            <button className="btn btn-primary btn-sm" onClick={sendMessage}>Send</button>
-          </div>
-        </div>
+              <TestResultDisplay result={r} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

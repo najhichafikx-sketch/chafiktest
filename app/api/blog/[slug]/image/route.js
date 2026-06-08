@@ -1,4 +1,6 @@
 import { getBlogPostBySlug } from '@/lib/db';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +11,27 @@ export async function GET(request, { params }) {
     if (!post || !post.featured_image) {
       return new Response(null, { status: 404 });
     }
+
     const img = post.featured_image;
+
+    // File-based image
+    if (typeof img === 'string' && img.startsWith('/uploads/')) {
+      const filePath = path.join(process.cwd(), 'public', img);
+      if (!fs.existsSync(filePath)) return new Response(null, { status: 404 });
+      const buf = fs.readFileSync(filePath);
+      const ext = path.extname(filePath).slice(1);
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      return new Response(buf, {
+        status: 200,
+        headers: {
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Content-Length': String(buf.length)
+        }
+      });
+    }
+
+    // Legacy base64 image
     if (typeof img !== 'string' || !img.startsWith('data:')) {
       return new Response(null, { status: 404 });
     }

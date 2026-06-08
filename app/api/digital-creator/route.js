@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateAIContent } from '@/lib/openrouter';
 
-const SYSTEM_PROMPT = `You are an expert in optimizing and selling digital products on platforms like Etsy, Amazon KDP, Gumroad, Creative Fabrica, and Teachers Pay Teachers. You deeply understand marketplace SEO, pricing psychology, conversion optimization, cover design, and social media marketing. Always respond with ONLY valid JSON (no markdown fences, no explanation outside the JSON). Use the exact field names and types requested.`;
+const SYSTEM_PROMPT = `You are an expert digital product strategist and marketplace analyst. Provide comprehensive product intelligence.
 
-function buildPrompt(data) {
-  return `Analyze this digital product and provide a comprehensive optimization report.
-
-Platform: ${data.platform}
-Product Title: "${data.title}"
-${data.description ? `Current Description: ${data.description}` : ''}
-${data.keywords ? `Current Tags/Keywords: ${data.keywords}` : ''}
-${data.price ? `Current Price: ${data.price}` : ''}
-${data.url ? `Product URL: ${data.url}` : ''}
-
-Return ONLY a valid JSON object (no markdown, no text outside JSON) with this EXACT structure:
+Return ONLY valid JSON with this exact structure:
 {
   "seo_score": 75,
   "competition_score": 60,
@@ -21,24 +11,73 @@ Return ONLY a valid JSON object (no markdown, no text outside JSON) with this EX
   "conversion_score": 70,
   "monthly_prediction_min": 5,
   "monthly_prediction_max": 30,
-  "optimized_title": "SEO-optimized title in English, max 140 chars, with highest-value keywords first",
-  "keywords": ["long-tail keyword 1", "long-tail keyword 2", "long-tail keyword 3", "long-tail keyword 4", "long-tail keyword 5", "long-tail keyword 6", "long-tail keyword 7", "long-tail keyword 8", "long-tail keyword 9"],
-  "bullets": ["Compelling bullet 1 (max 200 chars)", "Compelling bullet 2", "Compelling bullet 3", "Compelling bullet 4", "Compelling bullet 5"],
-  "cover_tips": ["Specific cover design tip 1", "Cover design tip 2", "Cover design tip 3", "Cover design tip 4"],
-  "strengths": ["Current strength 1", "Current strength 2", "Current strength 3", "Current strength 4"],
-  "weaknesses": ["Current weakness 1", "Current weakness 2", "Current weakness 3", "Current weakness 4"],
+  "optimized_title": "SEO title max 140 chars",
+  "keywords": ["kw1","kw2","kw3","kw4","kw5","kw6","kw7","kw8","kw9"],
+  "bullets": ["bullet 1","bullet 2","bullet 3","bullet 4","bullet 5"],
+  "cover_tips": ["tip 1","tip 2","tip 3","tip 4"],
+  "strengths": ["strength 1","strength 2","strength 3"],
+  "weaknesses": ["weakness 1","weakness 2","weakness 3"],
   "price_min": 9.99,
   "price_recommended": 14.99,
   "price_premium": 24.99,
-  "bundle_idea": "Specific bundle idea to increase AOV",
-  "upsell_idea": "Specific upsell offer to increase LTV",
-  "instagram": "Full Instagram caption with 5-7 relevant hashtags at the end, emoji-rich, under 2200 chars",
-  "pinterest": "Pinterest description in English, keyword-rich, 2-3 sentences with a clear hook",
-  "twitter": "Engaging tweet under 280 chars with 1-2 hashtags",
-  "facebook": "Facebook post with hook, story, value, and CTA (3-5 short paragraphs)",
-  "email_subject": "Compelling email subject line under 60 chars",
-  "email_body": "Short email body (5-8 lines) with hook, value, social proof, and CTA"
+  "bundle_idea": "Bundle idea text",
+  "upsell_idea": "Upsell idea text",
+  "instagram": "Instagram caption with hashtags",
+  "pinterest": "Pinterest description",
+  "twitter": "Tweet under 280 chars",
+  "facebook": "Facebook post with hook, story, CTA",
+  "email_subject": "Subject under 60 chars",
+  "email_body": "Email body 5-8 lines",
+
+  "validation": {
+    "demandScore": 85,
+    "competitionScore": 40,
+    "profitScore": 78,
+    "launchDifficulty": "Easy / Medium / Hard",
+    "scalabilityScore": 82,
+    "longTermPotential": "High / Medium / Low",
+    "finalVerdict": "High Potential Opportunity / Strong Opportunity / Moderate Opportunity / Poor Opportunity"
+  },
+  "blueprint": {
+    "positioning": "Market positioning statement",
+    "customerAvatar": "Detailed customer description",
+    "painPoints": ["Pain point 1","Pain point 2","Pain point 3"],
+    "desires": ["Desire 1","Desire 2","Desire 3"],
+    "valueProposition": "Core value proposition",
+    "usp": "Unique selling proposition",
+    "pricingStrategy": "Pricing strategy description",
+    "launchStrategy": "Launch strategy summary"
+  },
+  "keywordIntelligence": {
+    "primary": ["kw1","kw2"],
+    "secondary": ["kw3","kw4"],
+    "longTail": ["long tail 1","long tail 2"],
+    "commercial": ["buy kw1","buy kw2"],
+    "buyerIntent": ["intent kw1","intent kw2"],
+    "lowCompetition": ["low comp 1","low comp 2"],
+    "trending": ["trending 1","trending 2"]
+  },
+  "imagePrompts": {
+    "productCover": {"standard":"...","advanced":"...","negative":"..."},
+    "etsyListing": {"standard":"...","advanced":"...","negative":"..."},
+    "gumroadCover": {"standard":"...","advanced":"...","negative":"..."},
+    "mockup": {"standard":"...","advanced":"...","negative":"..."},
+    "pinterestPin": {"standard":"...","advanced":"...","negative":"..."},
+    "productAd": {"standard":"...","advanced":"...","negative":"..."}
+  }
 }`;
+
+function buildPrompt(data) {
+  return `Analyze this digital product and provide a comprehensive optimization report.
+
+Platform: ${data.platform}
+Product Title: "${data.title}"
+${data.description ? `Description: ${data.description}` : ''}
+${data.keywords ? `Tags/Keywords: ${data.keywords}` : ''}
+${data.price ? `Price: ${data.price}` : ''}
+${data.url ? `URL: ${data.url}` : ''}
+
+Provide complete analysis including validation scores, success blueprint, keyword intelligence, and image prompts.`;
 }
 
 export async function POST(request) {
@@ -56,7 +95,7 @@ export async function POST(request) {
       prompt: userPrompt,
       systemPrompt: SYSTEM_PROMPT,
       toolId: 'ai-digital-creator',
-      maxTokens: 3500,
+      maxTokens: 5000,
       imageBase64: imageBase64 || null,
       imageMimeType: imageMimeType || null
     });

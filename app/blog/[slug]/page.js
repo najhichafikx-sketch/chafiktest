@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import BlogImage from '@/components/BlogImage';
 import { TOOL_NAMES, TOOL_ARTICLES } from '@/lib/tool-content';
 import { YOUTUBE_BLOG_POSTS } from '@/lib/blog-content';
 import { SEED_POSTS } from '@/lib/seed-blog';
@@ -150,10 +151,11 @@ export default async function BlogArticle({ params }) {
 
   const [dbPost, allDbPosts] = await Promise.all([getDbPost(slug), getAllDbPosts()]);
 
-  const hasDbImg = dbPost?.featured_image && dbPost.featured_image.startsWith('data:');
+  const isBase64Img = dbPost?.featured_image && dbPost.featured_image.startsWith('data:');
+  const isFileImg = dbPost?.featured_image && dbPost.featured_image.startsWith('/uploads/');
   const ver = dbPost?.updated_at || dbPost?.published_at || dbPost?.created_at || '';
   const imgVer = ver ? '?v=' + (typeof ver === 'string' ? ver.replace(/[^0-9]/g, '').slice(0, 14) : String(Date.now())) : '';
-  const featuredImage = hasDbImg ? `/api/blog/${slug}/image${imgVer}` : (dbPost?.featured_image || fallbackImage(post.slug));
+  const featuredImage = isBase64Img ? `/api/blog/${slug}/image${imgVer}` : (isFileImg ? dbPost.featured_image : (dbPost?.featured_image || fallbackImage(post.slug)));
 
   const seen = new Set();
   const mergedRelated = [];
@@ -166,7 +168,8 @@ export default async function BlogArticle({ params }) {
         category: p.category || 'General',
         excerpt: p.excerpt || p.meta_description || '',
         reading_time: p.reading_time || 5,
-        featured_image: p.featured_image || ''
+        featured_image: p.featured_image || '',
+        has_file_image: p.has_file_image || (typeof p.featured_image === 'string' && p.featured_image.startsWith('/uploads/'))
       });
     }
   }
@@ -287,27 +290,6 @@ export default async function BlogArticle({ params }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: 16 }}>{post.excerpt}</p>
           </div>
 
-          <div style={{
-            marginTop: 24,
-            background: '#0f0f1a',
-            borderRadius: 12,
-            padding: 12,
-            border: '1px solid rgba(99,102,241,0.2)'
-          }}>
-            <img
-              src={featuredImage}
-              alt={post.title}
-              style={{
-                display: 'block',
-                width: '100%',
-                height: 'auto',
-                maxHeight: 600,
-                objectFit: 'contain',
-                borderRadius: 8
-              }}
-            />
-          </div>
-
           {dbPost?.external_link && (
             <div style={{ marginTop: 24, textAlign: 'center' }}>
               <a
@@ -374,15 +356,11 @@ export default async function BlogArticle({ params }) {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: 24 }}>Related Articles</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
               {relatedPosts.map(rp => {
-                const img = rp.has_image ? `/api/blog/${rp.slug}/image${rp.image_version ? '?v=' + rp.image_version : ''}` : (rp.featured_image || fallbackImage(rp.slug));
+                const img = `/api/blog/${rp.slug}/image`;
                 return (
                   <Link key={rp.slug} href={`/blog/${rp.slug}`} className="related-card">
                     <div className="related-card-image">
-                      <img
-                        src={img}
-                        alt={rp.title}
-                        loading="lazy"
-                      />
+                      <BlogImage src={img} alt={rp.title} fallbackSrc={fallbackImage(rp.slug)} />
                     </div>
                     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flex: 1 }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--neon-cyan)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{rp.category}</span>
