@@ -101,6 +101,10 @@ function ToolsSection() {
           <ToolCard href="/platforms-views/audience-test-lab" icon="🧪" name="Audience Test Lab" desc="Test audience behavior, analyze retention, compare hooks, battle thumbnails, and predict viral scores before publishing." />
         </CategorySection>
 
+        <CategorySection title="Social Media Thumbnails" desc="Generate custom social media thumbnails with AI for YouTube, Instagram, TikTok, and more.">
+          <ToolCard href="/thumbnail-generator" icon="🖼️" name="Thumbnail Social Media" desc="AI-powered social media thumbnail generator. Create professional, click-worthy thumbnails in seconds with brand identity and style presets." />
+        </CategorySection>
+
         <CTAAllTools />
       </div>
     </section>
