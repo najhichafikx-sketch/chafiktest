@@ -1,12 +1,9 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import ChromeWrapper from '@/components/ChromeWrapper';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import MonetagServiceWorker from '@/components/MonetagServiceWorker';
-import BannerSlot from '@/components/ads/BannerSlot';
-import SideBanner from '@/components/ads/SideBanner';
 import SmartAdBootstrap from '@/components/SmartAdBootstrap';
 import { WebsiteSchema, OrganizationSchema, SoftwareAppSchema, JsonLd } from '@/lib/seo';
 
@@ -70,15 +67,10 @@ export default function RootLayout({ children }) {
         <AnalyticsTracker />
         <MonetagServiceWorker />
         <SmartAdBootstrap />
-        <Navbar />
-        <BannerSlot slotId="site-top" />
-        <SideBanner side="left" />
 
-        <main>
+        <ChromeWrapper>
           {children}
-        </main>
-
-        <Footer />
+        </ChromeWrapper>
 
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
