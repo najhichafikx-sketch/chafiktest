@@ -1,4 +1,4 @@
-import { ensureLabUser, earnPoints, purchaseScreens, runTest } from '@/lib/lab';
+import { ensureLabUser, earnPoints, purchaseScreens, consumeScreens, runTest } from '@/lib/lab';
 
 export async function POST(request) {
   try {
@@ -17,6 +17,12 @@ export async function POST(request) {
       const result = await purchaseScreens(userId, amount);
       if (result.error) return Response.json(result);
       return Response.json({ lab_points: result.lab_points, lab_sessions: result.lab_sessions, lab_spent: result.lab_spent });
+    }
+
+    if (action === 'consume') {
+      const result = await consumeScreens(userId, amount || 1);
+      if (result.error) return Response.json(result);
+      return Response.json({ lab_sessions: result.lab_sessions });
     }
 
     if (action === 'run') {

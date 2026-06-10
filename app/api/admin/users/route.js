@@ -1,12 +1,21 @@
 import { verifyAdmin } from '@/lib/auth';
 import { getUsers, getUsersStats, updateUser, deleteUserRecord } from '@/lib/db';
+import { getMemoryUsers } from '@/lib/users';
 
 export async function GET(request) {
   if (!verifyAdmin(request)) return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
   try {
-    const users = await getUsers();
-    const stats = await getUsersStats();
-    return Response.json({ success: true, users, stats });
+    const [fileUsers, memoryUsers] = await Promise.all([getUsers(), getMemoryUsers()]);
+    const emails = new Set();
+    const merged = [];
+    for (const u of [...fileUsers, ...memoryUsers]) {
+      const key = u.email?.toLowerCase();
+      if (!key || emails.has(key)) continue;
+      emails.add(key);
+      merged.push(u);
+    }
+    const stats = { total: merged.length, active: merged.filter(u => u.status === 'active').length, newToday: 0, newThisWeek: 0 };
+    return Response.json({ success: true, users: merged, stats });
   } catch (err) {
     return Response.json({ success: false, users: [], stats: {} }, { status: 500 });
   }

@@ -66,5 +66,13 @@ export function useLabPoints() {
     return data;
   }, []);
 
-  return { labPoints, labSessions, labEarned, labSpent, loading, offline, refetch, earn, purchase, runTest, getUserId };
+  const consume = useCallback(async (count) => {
+    const userId = getUserId();
+    const res = await fetch(API + '/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, action: 'consume', amount: count }) });
+    const data = await res.json();
+    if (data.lab_sessions !== undefined) setLabSessions(data.lab_sessions);
+    return data;
+  }, []);
+
+  return { labPoints, labSessions, labEarned, labSpent, loading, offline, refetch, earn, purchase, consume, runTest, getUserId };
 }

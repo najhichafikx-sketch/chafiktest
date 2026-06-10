@@ -37,7 +37,7 @@ const SCREEN_PACKAGES = [
 ];
 
 export default function AudienceTestLabPage() {
-  const { labPoints, labSessions, labEarned, labSpent, loading, offline, refetch, earn, purchase, runTest } = useLabPoints();
+  const { labPoints, labSessions, labEarned, labSpent, loading, offline, refetch, earn, purchase, consume, runTest } = useLabPoints();
   const [tab, setTab] = useState('dashboard');
   const [data, setData] = useState(null);
   const [dailyEarned, setDailyEarnedState] = useState(0);
@@ -120,7 +120,7 @@ export default function AudienceTestLabPage() {
         {tab === 'dashboard' && <Dashboard data={data} labPoints={labPoints} labSessions={labSessions} labEarned={labEarned} labSpent={labSpent} />}
         {tab === 'submit' && <SubmitVideo data={data} setData={setData} showNotif={showNotif} />}
         {tab === 'watch' && <WatchAndEarn data={data} setData={setData} earn={earn} showNotif={showNotif} dailyEarned={dailyEarned} updateEarned={updateEarned} />}
-        {tab === 'screens' && <BuyScreens labPoints={labPoints} labSessions={labSessions} purchase={purchase} showNotif={showNotif} data={data} setData={setData} />}
+        {tab === 'screens' && <BuyScreens labPoints={labPoints} labSessions={labSessions} purchase={purchase} consume={consume} showNotif={showNotif} data={data} setData={setData} />}
         {tab === 'test' && <TestVideo labSessions={labSessions} runTest={runTest} data={data} setData={setData} showNotif={showNotif} />}
         {tab === 'results' && <Results data={data} />}
       </div>
@@ -486,7 +486,7 @@ function extractVideoId(input) {
   return m ? m[1] : input;
 }
 
-function BuyScreens({ labPoints, labSessions, purchase, showNotif, data, setData }) {
+function BuyScreens({ labPoints, labSessions, purchase, consume, showNotif, data, setData }) {
   const [buying, setBuying] = useState(null);
   const [promoting, setPromoting] = useState(null);
   const [promoUrl, setPromoUrl] = useState('');
@@ -502,14 +502,15 @@ function BuyScreens({ labPoints, labSessions, purchase, showNotif, data, setData
 
   const handlePromote = async (pkg) => {
     if (!promoUrl) { showNotif('Paste a YouTube video URL first'); return; }
+    if (labSessions < pkg.screens) { showNotif('Not enough screens. Buy screens first with points.'); return; }
     setPromoting(pkg.screens);
-    const res = await purchase(pkg.screens);
+    const res = await consume(pkg.screens);
     if (res.error) { showNotif(res.error); setPromoting(null); return; }
     const vid = extractVideoId(promoUrl);
     const entry = { id: 'PROMO-' + Date.now().toString(36).toUpperCase(), url: vid, title: promoTitle || 'Promoted Video', duration: 2, submittedAt: Date.now(), promoted: true, views: pkg.screens };
     setData({ ...data, submitted: [...data.submitted, entry] });
     setPromoUrl(''); setPromoTitle(''); setPromoting(null);
-    showNotif(`Promoted! ${pkg.screens} views added to your video for ${pkg.cost} pts`);
+    showNotif(`Promoted! ${pkg.screens} screens used for your video`);
   };
 
   return (
@@ -535,11 +536,12 @@ function BuyScreens({ labPoints, labSessions, purchase, showNotif, data, setData
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-        {SCREEN_PACKAGES.map((pkg, i) => {
+          {SCREEN_PACKAGES.map((pkg, i) => {
           const canBuy = labPoints >= pkg.cost;
+          const canPromote = labSessions >= pkg.screens;
           const saving = i === 0 ? 0 : Math.round((1 - pkg.cost / (pkg.screens * 2.5)) * 100);
           return (
-            <div key={i} className="glass-card" style={{ padding: 24, textAlign: 'center', border: canBuy ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(100,100,120,0.15)', opacity: canBuy ? 1 : 0.5 }}>
+            <div key={i} className="glass-card" style={{ padding: 24, textAlign: 'center', border: canBuy ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(100,100,120,0.15)' }}>
               <div style={{ fontSize: '2rem', marginBottom: 4 }}>🖥️</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--neon-cyan)', marginBottom: 2 }}>{pkg.screens}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Test Screens</div>
@@ -555,17 +557,17 @@ function BuyScreens({ labPoints, labSessions, purchase, showNotif, data, setData
               </button>
               <hr style={{ border: 'none', borderTop: '1px solid rgba(100,100,120,0.15)', margin: '12px 0' }} />
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--neon-purple)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <span>📹</span> Promote Your Video <span>👇</span>
+                <span>📹</span> Promote Your Video — Use {pkg.screens} screens
               </div>
               <input className="form-input" type="url" placeholder="YouTube URL..." value={promoUrl} onChange={e => setPromoUrl(e.target.value)} style={{ marginBottom: 6, fontSize: '0.8rem', padding: '6px 10px' }} />
               <input className="form-input" type="text" placeholder="Title (optional)" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} style={{ marginBottom: 8, fontSize: '0.8rem', padding: '6px 10px' }} />
               <button
-                className={`btn ${canBuy && promoUrl ? 'btn-accent' : 'btn-outline'}`}
-                style={{ width: '100%', background: canBuy && promoUrl ? 'linear-gradient(135deg,#6c63ff,#f72585)' : undefined }}
+                className={`btn ${canPromote && promoUrl ? 'btn-accent' : 'btn-outline'}`}
+                style={{ width: '100%', background: canPromote && promoUrl ? 'linear-gradient(135deg,#6c63ff,#f72585)' : undefined }}
                 onClick={() => handlePromote(pkg)}
-                disabled={!canBuy || !promoUrl || promoting === pkg.screens}
+                disabled={!canPromote || !promoUrl || promoting === pkg.screens}
               >
-                {promoting === pkg.screens ? 'Promoting...' : canBuy && promoUrl ? `Promote → ${pkg.screens} views` : !promoUrl ? 'Paste URL above' : 'Need ' + (pkg.cost - labPoints) + ' more pts'}
+                {promoting === pkg.screens ? 'Promoting...' : canPromote && promoUrl ? `Promote → Use ${pkg.screens} screens` : !promoUrl ? 'Paste URL above' : 'Need ' + (pkg.screens - labSessions) + ' more screens'}
               </button>
               {promoUrl && (
                 <div style={{ marginTop: 8, borderRadius: 6, overflow: 'hidden', position: 'relative', paddingTop: '56.25%' }}>
