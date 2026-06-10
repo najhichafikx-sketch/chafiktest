@@ -2,16 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
+import { Download, Trash2, Snowflake, Ban } from 'lucide-react';
 
 export default function AdminUsers() {
   const router = useRouter();
   const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({ total: 0, active: 0, newToday: 0, newThisWeek: 0, newThisMonth: 0 });
+  const [stats, setStats] = useState({ total: 0, active: 0, newToday: 0, newThisWeek: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [msg, setMsg] = useState('');
-  const perPage = 15;
+  const perPage = 20;
 
   function loadUsers() {
     const token = localStorage.getItem('admin_token');
@@ -25,34 +26,48 @@ export default function AdminUsers() {
 
   useEffect(() => { loadUsers(); }, [router]);
 
-  async function handleToggleStatus(user) {
+  async function handleAction(userId, action) {
     const token = localStorage.getItem('admin_token');
-    const newStatus = user.status === 'active' ? 'disabled' : 'active';
-    await fetch('/api/admin/users', {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: user.id, status: newStatus })
-    });
-    setUsers(users.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
-    setMsg(`User ${newStatus === 'active' ? 'enabled' : 'disabled'}`);
-    setTimeout(() => setMsg(''), 3000);
-  }
-
-  async function handleDelete(user) {
-    if (!confirm(`Delete user ${user.email}?`)) return;
-    const token = localStorage.getItem('admin_token');
-    await fetch('/api/admin/users', {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: user.id })
-    });
-    setUsers(users.filter(u => u.id !== user.id));
-    setMsg('User deleted');
+    const labels = { freeze: 'frozen', suspend: 'suspended', activate: 'active' };
+    if (action === 'delete') {
+      if (!confirm('Delete this user?')) return;
+      await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId })
+      });
+      setUsers(users.filter(u => u.id !== userId));
+      setMsg('User deleted');
+    } else if (action === 'freeze') {
+      await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, status: 'frozen' })
+      });
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'frozen' } : u));
+      setMsg('Membership frozen');
+    } else if (action === 'suspend') {
+      await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, status: 'suspended' })
+      });
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'suspended' } : u));
+      setMsg('Membership suspended');
+    } else if (action === 'activate') {
+      await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, status: 'active' })
+      });
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'active' } : u));
+      setMsg('User activated');
+    }
     setTimeout(() => setMsg(''), 3000);
   }
 
   function exportCsv() {
-    const headers = ['ID','Email','Name','Status','Total Generations','Last Login','Created'];
+    const headers = ['ID', 'Email', 'Name', 'Status', 'Generations', 'Last Login', 'Created'];
     const rows = filtered.map(u => [u.id, u.email, u.name, u.status, u.total_generations || 0, u.last_login || '', u.created_at || '']);
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -70,77 +85,95 @@ export default function AdminUsers() {
   const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
+  const statusColor = (s) => {
+    if (s === 'active') return '#10b981';
+    if (s === 'frozen') return '#6366f1';
+    if (s === 'suspended') return '#f59e0b';
+    return '#9ca3af';
+  };
+
   if (loading) return <AdminLayout><div className="text-center py-5"><div className="spinner-border" role="status" /></div></AdminLayout>;
 
   return (
     <AdminLayout>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="h3 m-0">User Management</h1>
-        <button className="btn btn-sm btn-outline-secondary" onClick={exportCsv}>Export CSV</button>
-      </div>
+      <div style={{ padding: '32px 40px', background: '#f0f2f8', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: '#1a1a2e' }}>User Management</h1>
+          <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', fontSize: 13, background: '#fff', border: '1px solid #d0d4dc', borderRadius: 6, cursor: 'pointer', color: '#555' }}>
+            <Download size={14} /> Export CSV
+          </button>
+        </div>
 
-      {msg && <div className="alert alert-info py-2 small">{msg}</div>}
+        {msg && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 16px', marginBottom: 16, color: '#16a34a', fontSize: 13 }}>{msg}</div>}
 
-      <div className="row mb-3 g-2">
-        <div className="col-md-3">
-          <div className="card text-center p-2"><div className="h5 mb-0">{stats.total}</div><small className="text-muted">Total Users</small></div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center p-2"><div className="h5 mb-0">{stats.active}</div><small className="text-muted">Active Users</small></div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center p-2"><div className="h5 mb-0">{stats.newToday}</div><small className="text-muted">Today</small></div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center p-2"><div className="h5 mb-0">{stats.newThisWeek}</div><small className="text-muted">This Week</small></div>
-        </div>
-      </div>
-
-      <div className="card mb-3">
-        <div className="card-body py-2">
-          <div className="row g-2">
-            <div className="col-md-5">
-              <input className="form-control form-control-sm" placeholder="Search by email or name..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+          {[
+            { label: 'Total Users', value: stats.total },
+            { label: 'Active Users', value: stats.active },
+            { label: 'Today', value: stats.newToday },
+            { label: 'This Week', value: stats.newThisWeek },
+          ].map(s => (
+            <div key={s.label} style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #e0e4e8', padding: '14px 18px' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{s.label}</div>
             </div>
-            <div className="col-md-2 text-muted small pt-2">{filtered.length} users</div>
+          ))}
+        </div>
+
+        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #e0e4e8', marginBottom: 16 }}>
+          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input
+              placeholder="Search by email or name..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              style={{ flex: 1, padding: '8px 12px', fontSize: 13, border: '1px solid #d0d4dc', borderRadius: 6, outline: 'none' }}
+            />
+            <span style={{ fontSize: 13, color: '#888' }}>{filtered.length} users</span>
           </div>
         </div>
-      </div>
 
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table table-sm m-0">
+        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #e0e4e8', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Email</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Generations</th>
-                <th>Last Login</th>
-                <th>Registered</th>
-                <th style={{ width: 140 }}>Actions</th>
+              <tr style={{ borderBottom: '1px solid #e0e4e8' }}>
+                <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13, background: '#f8f9fb' }}>Name</th>
+                <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13, background: '#f8f9fb' }}>Email</th>
+                <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13, background: '#f8f9fb' }}>Registered</th>
+                <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13, background: '#f8f9fb' }}>Status</th>
+                <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13, background: '#f8f9fb', width: 200 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paged.length === 0 ? (
-                <tr><td colSpan="7" className="text-muted text-center py-3">No users found</td></tr>
-              ) : paged.map(u => (
-                <tr key={u.id}>
-                  <td>{u.email}</td>
-                  <td>{u.name || '-'}</td>
-                  <td>
-                    <span className={`badge bg-${u.status === 'active' ? 'success' : 'secondary'}`}>{u.status || 'active'}</span>
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: '#999', fontSize: 14 }}>No users found.</td></tr>
+              ) : paged.map((u, i) => (
+                <tr key={u.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid #e8eaed' : 'none' }}>
+                  <td style={{ padding: '16px', color: '#1a1a2e', fontWeight: 600, fontSize: 14 }}>{u.name || '-'}</td>
+                  <td style={{ padding: '16px', color: '#666', fontSize: 13 }}>{u.email}</td>
+                  <td style={{ padding: '16px', color: '#888', fontSize: 13 }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{ display: 'inline-block', background: statusColor(u.status), color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 12, textTransform: 'capitalize' }}>{u.status || 'active'}</span>
                   </td>
-                  <td>{u.total_generations || 0}</td>
-                  <td>{u.last_login ? new Date(u.last_login).toLocaleDateString() : '-'}</td>
-                  <td>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
-                  <td>
-                    <div className="btn-group btn-group-sm">
-                      <button className={`btn btn-outline-${u.status === 'active' ? 'warning' : 'success'}`}
-                        onClick={() => handleToggleStatus(u)}>
-                        {u.status === 'active' ? 'Disable' : 'Enable'}
+                  <td style={{ padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {u.status !== 'active' && (
+                        <button onClick={() => handleAction(u.id, 'activate')} style={btnStyle.success}>
+                          Activate
+                        </button>
+                      )}
+                      {u.status !== 'frozen' && (
+                        <button onClick={() => handleAction(u.id, 'freeze')} style={btnStyle.warning}>
+                          <Snowflake size={12} style={{ marginRight: 4 }} /> Freeze
+                        </button>
+                      )}
+                      {u.status !== 'suspended' && (
+                        <button onClick={() => handleAction(u.id, 'suspend')} style={btnStyle.orange}>
+                          <Ban size={12} style={{ marginRight: 4 }} /> Suspend
+                        </button>
+                      )}
+                      <button onClick={() => handleAction(u.id, 'delete')} style={btnStyle.danger}>
+                        <Trash2 size={12} style={{ marginRight: 4 }} /> Delete
                       </button>
-                      <button className="btn btn-outline-danger" onClick={() => handleDelete(u)}>Del</button>
                     </div>
                   </td>
                 </tr>
@@ -148,25 +181,37 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {totalPages > 1 && (
-        <nav className="mt-3">
-          <ul className="pagination pagination-sm justify-content-center">
-            <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
-            </li>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 20 }}>
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} style={pageBtn(page === 1)}>Prev</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <li key={p} className={`page-item ${page === p ? 'active' : ''}`}>
-                <button className="page-link" onClick={() => setPage(p)}>{p}</button>
-              </li>
+              <button key={p} onClick={() => setPage(p)} style={{ ...pageBtn(false), ...(page === p ? { background: '#534AB7', color: '#fff', borderColor: '#534AB7' } : {}) }}>{p}</button>
             ))}
-            <li className={`page-item ${page >= totalPages ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</button>
-            </li>
-          </ul>
-        </nav>
-      )}
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={pageBtn(page >= totalPages)}>Next</button>
+          </div>
+        )}
+      </div>
     </AdminLayout>
   );
+}
+
+const btnStyle = {
+  success: { padding: '4px 12px', fontSize: 13, cursor: 'pointer', background: '#fff', border: '1px solid #d0d4dc', borderRadius: 4, color: '#10b981', textAlign: 'left' },
+  warning: { padding: '4px 12px', fontSize: 13, cursor: 'pointer', background: '#fff', border: '1px solid #d0d4dc', borderRadius: 4, color: '#6366f1', textAlign: 'left' },
+  orange: { padding: '4px 12px', fontSize: 13, cursor: 'pointer', background: '#fff', border: '1px solid #d0d4dc', borderRadius: 4, color: '#f59e0b', textAlign: 'left' },
+  danger: { padding: '4px 12px', fontSize: 13, cursor: 'pointer', background: '#fff', border: '1px solid #d0d4dc', borderRadius: 4, color: '#dc2626', textAlign: 'left' },
+};
+
+function pageBtn(disabled) {
+  return {
+    padding: '6px 12px',
+    fontSize: 13,
+    border: '1px solid #d0d4dc',
+    borderRadius: 4,
+    background: '#fff',
+    color: disabled ? '#ccc' : '#333',
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+  };
 }
