@@ -285,6 +285,8 @@ function SubmitVideo({ data, setData, showNotif }) {
 /* ════════════════════════════════════════
    WATCH & EARN
    ════════════════════════════════════════ */
+const DEFAULT_WATCH_VIDEO = { id: 'DEFAULT_CHAFIKTECH', url: 'yXFjU-z3bUU', title: '🎬 Chafiktech Promo — Earn Points!', duration: 10 };
+
 function WatchAndEarn({ data, setData, earn, showNotif, dailyEarned, updateEarned }) {
   const [queue, setQueue] = useState([]);
   const [watching, setWatching] = useState(null);
@@ -295,10 +297,11 @@ function WatchAndEarn({ data, setData, earn, showNotif, dailyEarned, updateEarne
   const intervalRef = useRef(null);
   const timerActive = useRef(false);
 
-  // Build queue from submitted videos (excluding user's own)
+  // Build queue: default video always first + other submitted videos
   useEffect(() => {
     const otherVids = data.submitted.filter(v => !data.watchHistory.find(w => w.videoId === v.id));
-    setQueue(otherVids.length > 0 ? otherVids : []);
+    const defaultEntry = { ...DEFAULT_WATCH_VIDEO, isDefault: true };
+    setQueue([defaultEntry, ...otherVids]);
   }, [data]);
 
   const startWatching = (video) => {
