@@ -97,12 +97,14 @@ export async function generateMetadata({ params }) {
       description: post.excerpt,
       type: 'article',
       publishedTime: '2026-01-01',
-      authors: ['Chafiktech Ai']
+      authors: ['Chafiktech Ai'],
+      images: [{ url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/api/blog/${slug}/image.png` }]
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.excerpt
+      description: post.excerpt,
+      images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/api/blog/${slug}/image.png`]
     },
     alternates: { canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.chafiktech.com'}/blog/${slug}` },
     robots: { index: true, follow: true }
