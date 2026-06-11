@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Wrench, DollarSign, BarChart3,
   Settings, Key, Globe, Newspaper, MessageSquare,
-  Users, LogOut, Upload
+  Users, LogOut, Upload, Eye
 } from 'lucide-react';
 
 const links = [
@@ -22,6 +22,7 @@ const links = [
   { href: '/admin/blog', label: 'Blog Articles', icon: Newspaper },
   { href: '/admin/prompts', label: 'Prompt Articles', icon: MessageSquare },
   { href: '/admin/auto-publisher', label: 'Auto-Publisher', icon: Upload },
+  { href: '/admin/blog-stats', label: 'Blog Stats', icon: Eye },
   { type: 'divider' },
   { href: '/admin/users', label: 'Users', icon: Users },
 ];
