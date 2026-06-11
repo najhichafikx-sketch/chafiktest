@@ -57,6 +57,8 @@ export default function BlogPage() {
       const db = dbBySlug[slug];
       const st = staticBySlug[slug];
       if (db) {
+        const rVer = db.updated_at || db.published_at || db.created_at || '';
+        const rImgVer = rVer ? '?v=' + (typeof rVer === 'string' ? rVer.replace(/[^0-9]/g, '').slice(0, 14) : '0') : '';
         merged.push({
           slug: db.slug,
           title: db.title,
@@ -66,6 +68,7 @@ export default function BlogPage() {
           featured_image: db.featured_image || st?.featured_image || '',
           has_image: db.has_image || false,
           image_version: db.image_version || '',
+          imgVer: rImgVer,
           _order: 1
         });
       } else {
@@ -115,7 +118,7 @@ export default function BlogPage() {
           </p>
           <div className="blog-grid">
             {filtered.map(post => {
-              const img = `/api/blog/${post.slug}/image.png`;
+              const img = `/api/blog/${post.slug}/image.png${post.imgVer || ''}`;
               return (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-card">
                   <div className="blog-card-image" style={{ position: 'relative', overflow: 'hidden' }}>
