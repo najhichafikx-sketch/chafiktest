@@ -1,5 +1,5 @@
 import { verifyAdmin } from '@/lib/auth';
-import { getUsers, getUsersStats, updateUser, deleteUserRecord } from '@/lib/db';
+import { getUsers, getUsersStats, updateUser, deleteUserRecord } from '@/lib/users';
 
 export async function GET(request) {
   if (!verifyAdmin(request)) return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
