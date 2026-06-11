@@ -196,9 +196,6 @@ export default function ToolPage({ icon, title, description, placeholder, inputH
 
                   <div className="results-content-inner" style={{ padding: 'var(--space-md)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginTop: 'var(--space-md)' }}
                     dangerouslySetInnerHTML={{ __html: result }} />
-
-                  <div className="results-content-inner" style={{ padding: 'var(--space-md)', marginTop: 'var(--space-md)' }}
-                    dangerouslySetInnerHTML={{ __html: result }} />
                 </div>
               )}
             </div>

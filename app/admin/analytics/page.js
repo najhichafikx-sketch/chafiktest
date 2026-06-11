@@ -1,15 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 
 export default function AdminAnalytics() {
+  const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/analytics')
+    const token = localStorage.getItem('admin_token');
+    if (!token) { router.push('/admin-login'); return; }
+    fetch('/api/admin/analytics', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
         if (d.success) setData(d);
@@ -17,7 +21,7 @@ export default function AdminAnalytics() {
       })
       .catch(() => setError('Network error'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   if (loading) {
     return (
