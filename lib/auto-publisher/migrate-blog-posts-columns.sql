@@ -74,3 +74,16 @@ ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Service role full access" ON blog_posts;
 CREATE POLICY "Service role full access" ON blog_posts
   FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Composite unique constraint on (slug, locale) for multi-language support
+DO $$
+BEGIN
+  -- Drop the old single-column unique constraint if it exists
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'blog_posts_slug_key') THEN
+    ALTER TABLE blog_posts DROP CONSTRAINT blog_posts_slug_key;
+  END IF;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- Add composite unique (slug, locale) — same slug can exist in 3 languages
+CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_posts_slug_locale ON blog_posts (slug, locale);
